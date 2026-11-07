@@ -287,18 +287,6 @@ export default function App() {
               )}
             </div>
 
-            {/* Ask AI Care Assistant Button (Direct accessible AI Agent) */}
-            <button
-              onClick={() => setIsAIAssistantOpen(true)}
-              className="h-9 px-3 rounded-full bg-[#E8F2F0] hover:bg-[#D6ECE6] text-[#3B665E] border border-[#6FA79A]/30 flex items-center gap-1.5 text-xs font-bold shadow-2xs transition-colors"
-              title="Ask AI Care Assistant"
-              aria-label="Ask AI Care Assistant"
-            >
-              <Bot className="w-4 h-4 text-[#578C80]" />
-              <span className="hidden sm:inline">Ask AI</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            </button>
-
             {/* In-app Notification Bell */}
             <button
               onClick={() => setIsNotificationOpen(true)}
@@ -341,14 +329,6 @@ export default function App() {
               </button>
             );
           })}
-
-          <button
-            onClick={() => setIsAIAssistantOpen(true)}
-            className="py-2 px-3.5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-[#FAF6EF] text-[#3B665E] border border-[#6FA79A]/25 hover:bg-[#E8F2F0] transition-colors shrink-0"
-          >
-            <Bot className="w-4 h-4 text-[#6FA79A]" />
-            <span>Ask AI Agent</span>
-          </button>
         </div>
       </div>
 
@@ -467,7 +447,7 @@ export default function App() {
 
       {/* MOBILE-FIRST FIXED BOTTOM NAVIGATION BAR */}
       <nav className="no-print fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#6FA79A]/20 md:hidden">
-        <div className="grid grid-cols-4 items-center h-16 max-w-md mx-auto px-2">
+        <div className="grid grid-cols-5 items-center h-16 max-w-md mx-auto px-2">
           {/* Tab 1: Home */}
           <button
             onClick={() => setCurrentTab('home')}
@@ -510,6 +490,20 @@ export default function App() {
           >
             <FileSpreadsheet className="w-5 h-5" />
             <span className="text-[10px] font-bold tracking-tight mt-1">Report</span>
+          </button>
+
+          {/* Tab 5: Alerts (opens notifications) */}
+          <button
+            onClick={() => setIsNotificationOpen(true)}
+            className="relative flex flex-col items-center justify-center h-full text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            <Bell className="w-5 h-5" />
+            {unreadNotifsCount > 0 && (
+              <span className="absolute top-2.5 right-1/2 translate-x-4 w-4 h-4 rounded-full bg-[#D9644F] text-white text-[9px] font-black flex items-center justify-center">
+                {unreadNotifsCount}
+              </span>
+            )}
+            <span className="text-[10px] font-bold tracking-tight mt-1">Alerts</span>
           </button>
         </div>
       </nav>

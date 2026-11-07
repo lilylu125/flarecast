@@ -135,7 +135,7 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
         />
 
         {/* Score (left) · Current skin status (middle) · Plant (right) */}
-        <div className="relative flex items-center gap-4 sm:gap-6">
+        <div className="relative grid grid-cols-[auto_1fr] sm:grid-cols-[auto_1fr_auto] items-center gap-x-5 gap-y-4 sm:gap-x-6">
           {/* Score */}
           <div className="flex flex-col items-center shrink-0">
             <span className={`text-6xl sm:text-7xl font-black tracking-tight tabular-nums leading-none ${scoreTextClass}`}>
@@ -146,7 +146,7 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
           </div>
 
           {/* Current skin status */}
-          <div className="flex-1 min-w-0 space-y-2">
+          <div className="min-w-0 space-y-2 col-span-2 sm:col-span-1 order-3 sm:order-2">
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#5C736C]">
                 Current Skin Status
@@ -171,14 +171,12 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
               <span>{comparisonText}</span>
             </div>
 
-            <p className="text-xs text-[#4A645D] leading-relaxed hidden sm:block">{statusSummary}</p>
+            <p className="text-xs text-[#4A645D] leading-relaxed">{statusSummary}</p>
           </div>
 
           {/* Plant */}
-          {plantSlot && <div className="shrink-0">{plantSlot}</div>}
+          {plantSlot && <div className="justify-self-end order-2 sm:order-3">{plantSlot}</div>}
         </div>
-
-        <p className="text-xs text-[#4A645D] leading-relaxed mt-3 sm:hidden">{statusSummary}</p>
 
         {/* Interactive Visual Spectrum Meter (0 to 100) */}
         <div className="mt-5 space-y-2">
