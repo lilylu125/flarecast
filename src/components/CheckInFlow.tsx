@@ -6,16 +6,21 @@ import {
   Sparkles,
   Layers,
   AlertTriangle,
-  ArrowRight,
   X,
   Loader2,
   Smile,
   Meh,
   Frown,
+  ZoomIn,
+  Volume2,
+  VolumeX,
+  Check,
+  Calendar,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CheckIn, BodyArea, ProductAmount, ChildProfile } from '../types';
 import { generateSkinSvg } from '../utils/mockSkinImages';
+import { PhotoZoomModal } from './PhotoZoomModal';
 
 interface CheckInFlowProps {
   isOpen: boolean;
@@ -34,29 +39,30 @@ export const CheckInFlow: React.FC<CheckInFlowProps> = ({
   onSaveCheckIn,
   onTriggerRedFlag,
 }) => {
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
-
-  // Step 1: Photo & Area
+  // Simplified 1-screen check-in state
   const [bodyArea, setBodyArea] = useState<BodyArea>('face');
   const [photoDataUrl, setPhotoDataUrl] = useState<string>('');
-  const [ghostOpacity, setGhostOpacity] = useState<number>(35); // 0 to 100
+  const [skipPhoto, setSkipPhoto] = useState<boolean>(false);
+  const [ghostOpacity, setGhostOpacity] = useState<number>(35);
   const [showGhost, setShowGhost] = useState<boolean>(true);
 
-  // Step 2: Itch level 1-5
+  // Itch score 1-5 (defaults to 2: mild)
   const [itchScore, setItchScore] = useState<number>(2);
 
-  // Step 3: Quick tags
+  // Quick tags
   const [selectedTags, setSelectedTags] = useState<string[]>(['Bath']);
 
-  // Step 4: Product applied
+  // Product & Calm Routine
   const [appliedProduct, setAppliedProduct] = useState<string>('Ceramide Barrier Balm');
   const [productAmount, setProductAmount] = useState<ProductAmount>('medium dab');
   const [calmPlanDone, setCalmPlanDone] = useState<boolean>(true);
 
-  // Submission & AI Analysis State
+  // Submission & AI Analysis
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [isCelebrationOpen, setIsCelebrationOpen] = useState<boolean>(false);
+  const [isZoomOpen, setIsZoomOpen] = useState<boolean>(false);
+  const [isSpeakingAssessment, setIsSpeakingAssessment] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -73,6 +79,7 @@ export const CheckInFlow: React.FC<CheckInFlowProps> = ({
       const reader = new FileReader();
       reader.onload = (loadEvent) => {
         setPhotoDataUrl(loadEvent.target?.result as string);
+        setSkipPhoto(false);
       };
       reader.readAsDataURL(file);
     }
@@ -85,11 +92,12 @@ export const CheckInFlow: React.FC<CheckInFlowProps> = ({
       seed: Math.floor(Math.random() * 100) + 1,
     });
     setPhotoDataUrl(sample);
+    setSkipPhoto(false);
   };
 
   const toggleTag = (tag: string) => {
     if (tag === '⚠️ Fever / Blistering') {
-      onTriggerRedFlag('Parent reported fever or spreading blister symptoms.');
+      onTriggerRedFlag('Parent reported fever, crusting, or spreading blisters.');
       return;
     }
     setSelectedTags((prev) =>
@@ -99,13 +107,12 @@ export const CheckInFlow: React.FC<CheckInFlowProps> = ({
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    let finalPhoto = photoDataUrl;
-    if (!finalPhoto) {
+    let finalPhoto = skipPhoto ? '' : photoDataUrl;
+    if (!finalPhoto && !skipPhoto) {
       finalPhoto = generateSkinSvg({ bodyArea, severity: 'mild', seed: 44 });
     }
 
     try {
-      // Call server Gemini API endpoint
       const res = await fetch('/api/analyze-skin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -128,12 +135,14 @@ export const CheckInFlow: React.FC<CheckInFlowProps> = ({
         return;
       }
 
-      // Compute composite skin score (0-100)
-      // High itch and high redness lower the score
+      // Compute skin score (0-100)
       const rednessPenalty = (data.rednessScore ?? 1) * 15;
       const itchPenalty = (itchScore - 1) * 12;
       const scratchPenalty = (data.scratchScore ?? 0) * 10;
-      const computedScore = Math.max(25, Math.min(96, 100 - (rednessPenalty + itchPenalty + scratchPenalty)));
+      const computedScore = Math.max(
+        25,
+        Math.min(96, 100 - (rednessPenalty + itchPenalty + scratchPenalty))
+      );
 
       const today = new Date();
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -162,7 +171,6 @@ export const CheckInFlow: React.FC<CheckInFlowProps> = ({
 
       onSaveCheckIn(newCheckIn);
 
-      // Trigger celebratory confetti
       try {
         confetti({
           particleCount: 50,
@@ -182,16 +190,26 @@ export const CheckInFlow: React.FC<CheckInFlowProps> = ({
     }
   };
 
-  const quickTagsList = [
-    'New product',
-    'New food',
-    'Bad night',
-    'Daycare',
-    'Sweaty/hot',
-    'Stress',
-    'Bath',
-    'Pet contact',
-  ];
+  const handleSpeakAssessment = () => {
+    if (!('speechSynthesis' in window) || !analysisResult) return;
+
+    if (isSpeakingAssessment) {
+      window.speechSynthesis.cancel();
+      setIsSpeakingAssessment(false);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const textToSpeak = `${child.name}'s assessment: ${analysisResult.description}. Status is ${analysisResult.overallStatus}. Redness level ${analysisResult.rednessScore || 1} out of 3. Tomorrow's forecast has been updated, and rain water is showering your care garden.`;
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.rate = 1.0;
+
+    utterance.onstart = () => setIsSpeakingAssessment(true);
+    utterance.onend = () => setIsSpeakingAssessment(false);
+    utterance.onerror = () => setIsSpeakingAssessment(false);
+
+    window.speechSynthesis.speak(utterance);
+  };
 
   const bodyAreas: { key: BodyArea; label: string }[] = [
     { key: 'face', label: 'Face / Cheeks' },
@@ -202,292 +220,271 @@ export const CheckInFlow: React.FC<CheckInFlowProps> = ({
     { key: 'other', label: 'Other Spot' },
   ];
 
+  const quickTagsList = [
+    'Bath',
+    'Daycare',
+    'Sweaty/hot',
+    'New product',
+    'New food',
+    'Bad night',
+    'Stress',
+    'Pet contact',
+  ];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-fade-in">
-      <div className="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="checkin-title"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-fade-in"
+    >
+      <div className="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] border border-[#6FA79A]/20">
         {/* Header Bar */}
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-[#FAF6EF]">
           <div>
-            <span className="text-[11px] font-bold tracking-wider uppercase text-[#6FA79A]">
-              10-Second Check-In · Step {step} of 4
-            </span>
-            <h2 className="text-base font-bold text-[#2C3E38]">
-              {step === 1 && "Snap Today's Area Photo"}
-              {step === 2 && 'Itch & Body Location'}
-              {step === 3 && 'Daily Exposure Tags'}
-              {step === 4 && 'Product & Calm Routine'}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-extrabold tracking-wider uppercase text-[#6FA79A]">
+                Quick 1-Screen Check-In
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white text-[#426C63] font-bold">
+                Under 10s · 3 Taps
+              </span>
+            </div>
+            <h2 id="checkin-title" className="text-base font-bold text-[#2C3E38]">
+              Log {child.name}'s Skin Status
             </h2>
           </div>
           <button
             onClick={onClose}
+            aria-label="Close Check-in"
             className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-slate-500 hover:text-slate-800 shadow-sm"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Scrollable Content Body */}
-        <div className="p-5 overflow-y-auto space-y-5">
-          {/* STEP 1: Photo & Ghost Overlay */}
-          {step === 1 && (
-            <div className="space-y-4">
-              {/* Body Area Picker First */}
-              <div>
-                <label className="block text-xs font-bold text-[#2C3E38] mb-1.5">
-                  Affected Body Area
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {bodyAreas.map((area) => (
-                    <button
-                      key={area.key}
-                      onClick={() => setBodyArea(area.key)}
-                      className={`py-2 px-2.5 rounded-xl text-xs font-semibold transition-all text-center ${
-                        bodyArea === area.key
-                          ? 'bg-[#6FA79A] text-white shadow-sm'
-                          : 'bg-[#F2F7F6] text-[#426C63] hover:bg-[#E2EDE9]'
-                      }`}
-                    >
-                      {area.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+        {/* Unified 1-Screen Content (No multi-step wizard!) */}
+        <div className="p-5 overflow-y-auto space-y-4">
+          {/* 1. Body Area Picker (1-tap chips) */}
+          <div>
+            <label className="block text-xs font-bold text-[#2C3E38] mb-1.5">
+              1. Where is the affected spot?
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {bodyAreas.map((area) => (
+                <button
+                  key={area.key}
+                  type="button"
+                  onClick={() => setBodyArea(area.key)}
+                  className={`py-2 px-2.5 rounded-xl text-xs font-semibold transition-all text-center ${
+                    bodyArea === area.key
+                      ? 'bg-[#6FA79A] text-white shadow-sm'
+                      : 'bg-[#F2F7F6] text-[#426C63] hover:bg-[#E2EDE9]'
+                  }`}
+                >
+                  {area.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-              {/* Viewfinder with Ghost Overlay */}
-              <div className="relative w-full aspect-square bg-[#FAF6EF] rounded-2xl border-2 border-dashed border-[#6FA79A]/40 overflow-hidden flex flex-col items-center justify-center group">
-                {/* Active Photo if captured */}
-                {photoDataUrl ? (
-                  <img
-                    src={photoDataUrl}
-                    alt="Captured skin"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="text-center p-6 space-y-2">
-                    <div className="w-12 h-12 rounded-full bg-[#E8F2F0] text-[#6FA79A] flex items-center justify-center mx-auto shadow-sm">
-                      <Camera className="w-6 h-6" />
-                    </div>
-                    <p className="text-xs text-[#5C736C]">
-                      Capture photo or choose an instant test image
-                    </p>
-                  </div>
-                )}
+          {/* 2. Itch Level (1-tap large buttons) */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-bold text-[#2C3E38]">
+                2. How itchy was {child.name} today?
+              </label>
+              <span className="text-xs font-black text-[#578C80]">
+                Level {itchScore} of 5
+              </span>
+            </div>
 
-                {/* Ghost Overlay of previous photo */}
-                {showGhost && previousAreaCheckIn?.photoUrl && (
-                  <div
-                    className="absolute inset-0 pointer-events-none transition-opacity duration-200"
-                    style={{ opacity: ghostOpacity / 100 }}
+            <div className="grid grid-cols-5 gap-1.5">
+              {[
+                { val: 1, label: 'Calm', icon: Smile, color: 'text-[#6FA79A]' },
+                { val: 2, label: 'Mild', icon: Smile, color: 'text-[#6FA79A]' },
+                { val: 3, label: 'Rubbing', icon: Meh, color: 'text-[#E8B04B]' },
+                { val: 4, label: 'Scratch', icon: Frown, color: 'text-[#F4A98A]' },
+                { val: 5, label: 'Distress', icon: Frown, color: 'text-[#D9644F]' },
+              ].map((item) => {
+                const Icon = item.icon;
+                const isSelected = itchScore === item.val;
+                return (
+                  <button
+                    key={item.val}
+                    type="button"
+                    onClick={() => setItchScore(item.val)}
+                    className={`py-2 px-1 rounded-xl flex flex-col items-center justify-center transition-all ${
+                      isSelected
+                        ? 'bg-[#E8F2F0] border-2 border-[#6FA79A] shadow-xs'
+                        : 'bg-[#FAF6EF] border border-[#EBE4D8] hover:bg-[#F2ECE1]'
+                    }`}
                   >
-                    <img
-                      src={previousAreaCheckIn.photoUrl}
-                      alt="Previous alignment guide"
-                      className="w-full h-full object-cover filter contrast-125 saturate-50"
-                    />
-                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/60 text-[10px] text-white font-medium backdrop-blur-sm">
-                      Ghost: {previousAreaCheckIn.displayDate}
+                    <Icon className={`w-5 h-5 mb-0.5 ${isSelected ? 'text-[#3B665E]' : item.color}`} />
+                    <span className={`text-[10px] font-bold ${isSelected ? 'text-[#2C3E38]' : 'text-slate-600'}`}>
+                      {item.val}·{item.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 3. Photo & Alignment (Simple, 1-tap, or optional skip!) */}
+          <div className="bg-[#FAF6EF] rounded-2xl p-3.5 border border-[#EBE4D8] space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-[#2C3E38] flex items-center gap-1.5">
+                <Camera className="w-3.5 h-3.5 text-[#6FA79A]" />
+                <span>3. Photo of affected skin</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setSkipPhoto(!skipPhoto);
+                  if (!skipPhoto) setPhotoDataUrl('');
+                }}
+                className={`text-[11px] font-bold px-2 py-0.5 rounded-full transition-colors ${
+                  skipPhoto
+                    ? 'bg-[#E8F2F0] text-[#3B665E]'
+                    : 'text-[#5C736C] hover:text-[#2C3E38]'
+                }`}
+              >
+                {skipPhoto ? '✓ Skipped photo' : 'Skip photo today'}
+              </button>
+            </div>
+
+            {!skipPhoto ? (
+              <div className="flex items-center gap-3">
+                {/* Photo Preview Box with Ghost Overlay */}
+                <div className="relative w-20 h-20 bg-white rounded-xl border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center shadow-2xs">
+                  {photoDataUrl ? (
+                    <>
+                      <img
+                        src={photoDataUrl}
+                        alt="Skin preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setIsZoomOpen(true)}
+                        className="absolute bottom-1 right-1 p-1 bg-black/60 rounded text-white"
+                        title="Zoom in"
+                      >
+                        <ZoomIn className="w-3 h-3" />
+                      </button>
+                    </>
+                  ) : (
+                    <Camera className="w-6 h-6 text-slate-300" />
+                  )}
+
+                  {showGhost && previousAreaCheckIn?.photoUrl && !photoDataUrl && (
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{ opacity: ghostOpacity / 100 }}
+                    >
+                      <img
+                        src={previousAreaCheckIn.photoUrl}
+                        alt="Ghost guide"
+                        className="w-full h-full object-cover saturate-50"
+                      />
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
 
-                {/* Viewfinder alignment crosshairs */}
-                <div className="absolute inset-8 pointer-events-none border border-white/40 rounded-2xl" />
-              </div>
-
-              {/* Ghost Overlay Controls */}
-              {previousAreaCheckIn?.photoUrl && (
-                <div className="bg-[#FAF6EF] rounded-xl p-3 border border-[#EBE4D8] flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2 text-[#426C63] font-medium">
-                    <Layers className="w-4 h-4 text-[#6FA79A]" />
-                    <span>Ghost alignment guide</span>
-                  </div>
-                  <div className="flex items-center gap-2">
+                {/* Photo Action Buttons */}
+                <div className="flex-1 space-y-1.5">
+                  <div className="flex gap-2">
                     <input
-                      type="range"
-                      min="10"
-                      max="70"
-                      value={ghostOpacity}
-                      onChange={(e) => setGhostOpacity(Number(e.target.value))}
-                      className="w-20 accent-[#6FA79A]"
+                      type="file"
+                      ref={fileInputRef}
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleFileUpload}
+                      className="hidden"
                     />
                     <button
                       type="button"
-                      onClick={() => setShowGhost(!showGhost)}
-                      className="text-[11px] font-bold text-[#578C80] hover:underline"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex-1 h-9 px-3 rounded-xl bg-white border border-[#6FA79A]/40 text-[#426C63] font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-[#F2F7F6] shadow-2xs"
                     >
-                      {showGhost ? 'Hide' : 'Show'}
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{photoDataUrl ? 'Change Photo' : 'Snap / Upload'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleUseSamplePhoto('mild')}
+                      className="h-9 px-3 rounded-xl bg-[#F2F7F6] text-[#578C80] font-bold text-xs flex items-center justify-center gap-1 hover:bg-[#E2EDE9]"
+                      title="1-tap instant sample skin"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-[#E8B04B]" />
+                      <span>Sample</span>
                     </button>
                   </div>
-                </div>
-              )}
 
-              {/* Quick Actions for Photo */}
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="h-11 rounded-xl bg-white border border-[#6FA79A]/40 text-[#426C63] font-semibold text-xs flex items-center justify-center gap-1.5 hover:bg-[#F2F7F6]"
-                >
-                  <Upload className="w-4 h-4" />
-                  <span>Upload / Snap</span>
-                </button>
-
-                <button
-                  onClick={() => handleUseSamplePhoto('mild')}
-                  className="h-11 rounded-xl bg-[#F2F7F6] text-[#578C80] font-semibold text-xs flex items-center justify-center gap-1 hover:bg-[#E2EDE9]"
-                >
-                  <Sparkles className="w-4 h-4 text-[#E8B04B]" />
-                  <span>Use Test Photo</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 2: Itch Scale & Area */}
-          {step === 2 && (
-            <div className="space-y-5">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-[#2C3E38]">
-                    How itchy was {child.name} today?
-                  </label>
-                  <span className="text-sm font-black text-[#578C80]">
-                    Level {itchScore} of 5
-                  </span>
-                </div>
-
-                {/* Visual Itch Faces Slider */}
-                <div className="bg-[#FAF6EF] rounded-2xl p-4 border border-[#EBE4D8] space-y-4">
-                  <div className="flex justify-between items-center px-1 text-center">
-                    <div
-                      onClick={() => setItchScore(1)}
-                      className={`cursor-pointer transition-transform ${itchScore === 1 ? 'scale-110 font-bold text-[#6FA79A]' : 'opacity-50'}`}
-                    >
-                      <Smile className="w-7 h-7 mx-auto mb-1 text-[#6FA79A]" />
-                      <span className="text-[10px] block">1 · Calm</span>
-                    </div>
-                    <div
-                      onClick={() => setItchScore(2)}
-                      className={`cursor-pointer transition-transform ${itchScore === 2 ? 'scale-110 font-bold text-[#6FA79A]' : 'opacity-50'}`}
-                    >
-                      <Smile className="w-7 h-7 mx-auto mb-1 text-[#6FA79A]" />
-                      <span className="text-[10px] block">2 · Mild</span>
-                    </div>
-                    <div
-                      onClick={() => setItchScore(3)}
-                      className={`cursor-pointer transition-transform ${itchScore === 3 ? 'scale-110 font-bold text-[#E8B04B]' : 'opacity-50'}`}
-                    >
-                      <Meh className="w-7 h-7 mx-auto mb-1 text-[#E8B04B]" />
-                      <span className="text-[10px] block">3 · Rubbing</span>
-                    </div>
-                    <div
-                      onClick={() => setItchScore(4)}
-                      className={`cursor-pointer transition-transform ${itchScore === 4 ? 'scale-110 font-bold text-[#F4A98A]' : 'opacity-50'}`}
-                    >
-                      <Frown className="w-7 h-7 mx-auto mb-1 text-[#F4A98A]" />
-                      <span className="text-[10px] block">4 · Scratching</span>
-                    </div>
-                    <div
-                      onClick={() => setItchScore(5)}
-                      className={`cursor-pointer transition-transform ${itchScore === 5 ? 'scale-110 font-bold text-[#D9644F]' : 'opacity-50'}`}
-                    >
-                      <Frown className="w-7 h-7 mx-auto mb-1 text-[#D9644F]" />
-                      <span className="text-[10px] block">5 · Distressed</span>
-                    </div>
-                  </div>
-
-                  <input
-                    type="range"
-                    min="1"
-                    max="5"
-                    step="1"
-                    value={itchScore}
-                    onChange={(e) => setItchScore(Number(e.target.value))}
-                    className="w-full accent-[#6FA79A] h-2 bg-[#E2DBD0] rounded-lg cursor-pointer"
-                  />
-                </div>
-              </div>
-
-              {/* Area verification */}
-              <div className="bg-[#F2F7F6] p-3 rounded-xl flex items-center justify-between text-xs">
-                <span className="text-[#5C736C]">Logging for:</span>
-                <span className="font-bold text-[#426C63] capitalize">
-                  {bodyArea} of {child.name}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 3: Quick Tags */}
-          {step === 3 && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-[#2C3E38] mb-1">
-                  What happened today? (Tap all that apply)
-                </label>
-                <p className="text-[11px] text-[#5C736C] mb-3">
-                  Flarecast correlates these with weather and skin scores to discover patterns.
-                </p>
-
-                <div className="flex flex-wrap gap-2">
-                  {quickTagsList.map((tag) => {
-                    const active = selectedTags.includes(tag);
-                    return (
+                  {/* Ghost Alignment Guide Toggle */}
+                  {previousAreaCheckIn?.photoUrl && (
+                    <div className="flex items-center justify-between text-[11px] text-[#5C736C]">
+                      <span className="flex items-center gap-1">
+                        <Layers className="w-3 h-3 text-[#6FA79A]" />
+                        <span>Ghost from {previousAreaCheckIn.displayDate}</span>
+                      </span>
                       <button
-                        key={tag}
-                        onClick={() => toggleTag(tag)}
-                        className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
-                          active
-                            ? 'bg-[#6FA79A] text-white shadow-sm'
-                            : 'bg-[#F2F7F6] text-[#426C63] hover:bg-[#E2EDE9]'
-                        }`}
+                        type="button"
+                        onClick={() => setShowGhost(!showGhost)}
+                        className="font-bold text-[#578C80] hover:underline"
                       >
-                        {active && '✓ '}
-                        {tag}
+                        {showGhost ? 'Hide Ghost' : 'Show Ghost'}
                       </button>
-                    );
-                  })}
+                    </div>
+                  )}
                 </div>
               </div>
+            ) : (
+              <p className="text-xs text-[#5C736C] italic py-1">
+                Photo skipped — AI will evaluate flare score using itch rating and environmental context.
+              </p>
+            )}
+          </div>
 
-              {/* Red Flag Quick Safety Trigger */}
-              <div className="pt-2 border-t border-slate-100">
-                <button
-                  onClick={() => toggleTag('⚠️ Fever / Blistering')}
-                  className="w-full p-3 rounded-2xl bg-[#FDEEEB] border border-[#D9644F]/30 text-left flex items-start gap-3 hover:bg-[#FCDFD8] transition-colors"
-                >
-                  <AlertTriangle className="w-5 h-5 text-[#D9644F] shrink-0 mt-0.5" />
-                  <div>
-                    <span className="text-xs font-bold text-[#D9644F]">
-                      Child has fever, oozing, or spreading blisters?
-                    </span>
-                    <p className="text-[11px] text-[#8C3A2A] mt-0.5">
-                      Tap here immediately for urgent infection safety guidance.
-                    </p>
-                  </div>
-                </button>
-              </div>
+          {/* 4. Quick Exposure Tags (1-tap toggle) */}
+          <div>
+            <label className="block text-xs font-bold text-[#2C3E38] mb-1.5">
+              4. Daily exposures (Tap to toggle)
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {quickTagsList.map((tag) => {
+                const active = selectedTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleTag(tag)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+                      active
+                        ? 'bg-[#6FA79A] text-white shadow-2xs'
+                        : 'bg-[#F2F7F6] text-[#426C63] hover:bg-[#E2EDE9]'
+                    }`}
+                  >
+                    {active && '✓ '}
+                    {tag}
+                  </button>
+                );
+              })}
             </div>
-          )}
+          </div>
 
-          {/* STEP 4: Product Applied & Amount */}
-          {step === 4 && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-[#2C3E38] mb-1.5">
-                  Applied Product
+          {/* 5. Product Applied & Calm Routine (Quick check) */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex-1">
+                <label className="block text-[11px] font-bold text-[#5C736C] mb-1">
+                  Product Applied
                 </label>
                 <select
                   value={appliedProduct}
                   onChange={(e) => setAppliedProduct(e.target.value)}
-                  className="w-full h-11 px-3 rounded-xl bg-[#FAF6EF] border border-[#EBE4D8] text-xs font-medium text-[#2C3E38] focus:outline-none focus:ring-2 focus:ring-[#6FA79A]"
+                  className="w-full h-9 px-3 rounded-xl bg-[#FAF6EF] border border-[#EBE4D8] text-xs font-medium text-[#2C3E38]"
                 >
                   <option value="Ceramide Barrier Balm">Ceramide Barrier Balm (Active Trial)</option>
                   <option value="Hydrocortisone 1% (Calm Plan)">Hydrocortisone 1% (Calm Plan)</option>
@@ -498,102 +495,90 @@ export const CheckInFlow: React.FC<CheckInFlowProps> = ({
               </div>
 
               {appliedProduct !== 'None' && (
-                <div>
-                  <label className="block text-xs font-bold text-[#2C3E38] mb-1.5">
-                    Amount Applied
+                <div className="w-28">
+                  <label className="block text-[11px] font-bold text-[#5C736C] mb-1">
+                    Amount
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(['small dab', 'medium dab', 'large dab', '½ FTU', '1 FTU', '2 FTU'] as ProductAmount[]).map(
-                      (amt) => (
-                        <button
-                          key={amt}
-                          onClick={() => setProductAmount(amt)}
-                          className={`py-2 px-2 rounded-xl text-xs font-medium transition-all text-center ${
-                            productAmount === amt
-                              ? 'bg-[#F4A98A] text-white font-bold shadow-sm'
-                              : 'bg-[#FDF4F0] text-[#B8684C] hover:bg-[#FBD5C5]'
-                          }`}
-                        >
-                          {amt}
-                        </button>
-                      )
-                    )}
-                  </div>
-                  <span className="text-[10px] text-[#5C736C] block mt-1">
-                    FTU = Fingertip Unit (from adult fingertip to first crease)
-                  </span>
+                  <select
+                    value={productAmount}
+                    onChange={(e) => setProductAmount(e.target.value as ProductAmount)}
+                    className="w-full h-9 px-2 rounded-xl bg-[#FAF6EF] border border-[#EBE4D8] text-xs font-medium text-[#2C3E38]"
+                  >
+                    <option value="small dab">Small dab</option>
+                    <option value="medium dab">Medium dab</option>
+                    <option value="large dab">Large dab</option>
+                    <option value="½ FTU">½ FTU</option>
+                    <option value="1 FTU">1 FTU</option>
+                  </select>
                 </div>
               )}
-
-              {/* Calm Plan Checkbox */}
-              <div className="bg-[#F2F7F6] p-3.5 rounded-2xl border border-[#6FA79A]/20 flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-bold text-[#2C3E38] block">
-                    Calm Plan Routine Completed?
-                  </span>
-                  <span className="text-[11px] text-[#5C736C]">
-                    Lukewarm soak + moisture seal
-                  </span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={calmPlanDone}
-                  onChange={(e) => setCalmPlanDone(e.target.checked)}
-                  className="w-5 h-5 accent-[#6FA79A] rounded cursor-pointer"
-                />
-              </div>
             </div>
-          )}
+
+            {/* Calm Plan Checkbox */}
+            <label className="p-3 rounded-2xl bg-[#F2F7F6] border border-[#6FA79A]/20 flex items-center justify-between cursor-pointer hover:bg-[#E8F2F0] transition-colors">
+              <div>
+                <span className="text-xs font-bold text-[#2C3E38] block">
+                  Calm Routine Completed Today
+                </span>
+                <span className="text-[11px] text-[#5C736C]">
+                  Lukewarm soak + moisture seal within 3 minutes
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={calmPlanDone}
+                onChange={(e) => setCalmPlanDone(e.target.checked)}
+                className="w-5 h-5 accent-[#6FA79A] rounded cursor-pointer"
+              />
+            </label>
+          </div>
+
+          {/* Red Flag Warning */}
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => toggleTag('⚠️ Fever / Blistering')}
+              className="w-full p-2.5 rounded-xl bg-[#FDEEEB] border border-[#D9644F]/20 text-left flex items-center gap-2 hover:bg-[#FCDFD8] transition-colors"
+            >
+              <AlertTriangle className="w-4 h-4 text-[#D9644F] shrink-0" />
+              <span className="text-xs font-bold text-[#D9644F]">
+                Child has fever, yellow crusting, or spreading blisters?
+              </span>
+            </button>
+          </div>
         </div>
 
-        {/* Footer Navigation Bar */}
+        {/* 1-Tap Save Action Footer */}
         <div className="p-4 border-t border-slate-100 bg-[#FAF6EF] flex items-center justify-between shrink-0">
-          {step > 1 ? (
-            <button
-              onClick={() => setStep((s) => (s - 1) as any)}
-              className="px-4 py-2 text-xs font-bold text-[#5C736C] hover:text-[#2C3E38]"
-            >
-              Back
-            </button>
-          ) : (
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-[#5C736C]"
-            >
-              Cancel
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-xs font-medium text-[#5C736C] hover:text-[#2C3E38]"
+          >
+            Cancel
+          </button>
 
-          {step < 4 ? (
-            <button
-              onClick={() => setStep((s) => (s + 1) as any)}
-              className="h-11 px-6 rounded-xl bg-[#6FA79A] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm hover:bg-[#578C80] transition-colors"
-            >
-              <span>Next</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          ) : (
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="h-11 px-6 rounded-xl bg-[#6FA79A] text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-[#6FA79A]/20 hover:bg-[#578C80] transition-colors disabled:opacity-60"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>AI Scanning Skin...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Save Check-In</span>
-                </>
-              )}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="h-12 px-7 rounded-2xl bg-[#6FA79A] text-white font-black text-sm flex items-center gap-2 shadow-lg shadow-[#6FA79A]/25 hover:bg-[#578C80] transition-all disabled:opacity-60"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>AI Scanning Skin...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 text-[#E8B04B]" />
+                <span>Save Check-In (1 Tap)</span>
+              </>
+            )}
+          </button>
         </div>
 
-        {/* CELEBRATION MODAL OVERLAY ON SUCCESS */}
+        {/* CELEBRATION MODAL ON SUCCESS (With Audio Read-Aloud for accessibility) */}
         {isCelebrationOpen && analysisResult && (
           <div className="absolute inset-0 z-20 bg-white p-6 flex flex-col justify-between overflow-y-auto animate-fade-in">
             <div className="space-y-4 text-center pt-2">
@@ -603,33 +588,45 @@ export const CheckInFlow: React.FC<CheckInFlowProps> = ({
 
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#6FA79A]">
-                  Check-in Saved & Analyzed
+                  Check-in Logged Successfully
                 </span>
                 <h3 className="text-xl font-black text-[#2C3E38] mt-1">
                   Tomorrow's Forecast Updated!
                 </h3>
                 <p className="text-xs text-[#5C736C] mt-1">
-                  🌧️ Fresh rain water showered {child.name}'s care garden! Plant hydrated & growing strong 🌱
+                  🌧️ Fresh rain water is watering {child.name}'s care garden 🌱
                 </p>
               </div>
 
-              {/* AI Vision Analysis Card */}
+              {/* AI Assessment Card with Spoken Voice button */}
               <div className="bg-[#FAF6EF] rounded-2xl p-4 text-left border border-[#EBE4D8] space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#426C63]">
-                    Gemini Vision Assessment
+                  <span className="text-xs font-bold text-[#426C63] flex items-center gap-1.5">
+                    <span>Gemini Vision Assessment</span>
                   </span>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                      analysisResult.overallStatus === 'green'
-                        ? 'bg-[#E8F2F0] text-[#426C63]'
-                        : analysisResult.overallStatus === 'yellow'
-                        ? 'bg-[#FEF6E8] text-[#C4A35A]'
-                        : 'bg-[#FDEEEB] text-[#D9644F]'
+
+                  <button
+                    type="button"
+                    onClick={handleSpeakAssessment}
+                    aria-label="Listen to assessment"
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-colors ${
+                      isSpeakingAssessment
+                        ? 'bg-[#E8F2F0] text-[#3B665E] border border-[#6FA79A]'
+                        : 'bg-white text-[#578C80] border border-[#6FA79A]/30 hover:bg-[#F2F7F6]'
                     }`}
                   >
-                    {analysisResult.overallStatus} status
-                  </span>
+                    {isSpeakingAssessment ? (
+                      <>
+                        <VolumeX className="w-3.5 h-3.5 text-[#D9644F]" />
+                        <span>Stop voice</span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-3.5 h-3.5 text-[#6FA79A]" />
+                        <span>Listen aloud 🔊</span>
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 <p className="text-xs text-[#2C3E38] leading-relaxed italic">
@@ -658,7 +655,7 @@ export const CheckInFlow: React.FC<CheckInFlowProps> = ({
                   </div>
                 </div>
 
-                {/* Mandatory safety disclaimer */}
+                {/* Disclaimer */}
                 <p className="text-[10px] text-[#6A857D] text-center border-t border-[#EBE4D8] pt-2">
                   {analysisResult.disclaimer ||
                     'This is not a diagnosis — worth discussing with your doctor.'}
@@ -667,17 +664,27 @@ export const CheckInFlow: React.FC<CheckInFlowProps> = ({
             </div>
 
             <button
+              type="button"
               onClick={() => {
+                if (window.speechSynthesis) window.speechSynthesis.cancel();
                 setIsCelebrationOpen(false);
                 onClose();
               }}
-              className="w-full h-12 rounded-2xl bg-[#6FA79A] text-white font-bold text-sm shadow-md shadow-[#6FA79A]/20 hover:bg-[#578C80] transition-colors mt-4"
+              className="w-full h-12 rounded-2xl bg-[#6FA79A] text-white font-bold text-sm shadow-md shadow-[#6FA79A]/20 hover:bg-[#578C80] transition-colors mt-4 flex items-center justify-center gap-2"
             >
-              Done — View Dashboard
+              <span>Done — Watch Plant Rain Shower 🌱</span>
             </button>
           </div>
         )}
       </div>
+
+      {/* PHOTO ZOOM MODAL */}
+      <PhotoZoomModal
+        isOpen={isZoomOpen}
+        onClose={() => setIsZoomOpen(false)}
+        photoUrl={photoDataUrl}
+        title={`${child.name}'s ${bodyArea} preview`}
+      />
     </div>
   );
 };

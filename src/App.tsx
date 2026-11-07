@@ -14,6 +14,8 @@ import {
   Droplets,
   Calendar,
   AlertTriangle,
+  Bot,
+  Volume2,
 } from 'lucide-react';
 import {
   ChildProfile,
@@ -35,6 +37,8 @@ import {
 
 // Subcomponents
 import { ForecastSection } from './components/ForecastSection';
+import { AudioSummaryCard } from './components/AudioSummaryCard';
+import { AIAssistantModal } from './components/AIAssistantModal';
 import { ProgressRings } from './components/ProgressRings';
 import { TrendChart } from './components/TrendChart';
 import { GrowingPlant } from './components/GrowingPlant';
@@ -90,7 +94,9 @@ export default function App() {
 
   // Modals
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
+  const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
   const [lastWateredTimestamp, setLastWateredTimestamp] = useState<number | undefined>(undefined);
+  const [justLogged, setJustLogged] = useState(false);
   const [redFlagModal, setRedFlagModal] = useState<{ isOpen: boolean; reason?: string }>({
     isOpen: false,
   });
@@ -163,6 +169,8 @@ export default function App() {
   const handleSaveCheckIn = (newCheckIn: CheckIn) => {
     setCheckIns((prev) => [...prev, newCheckIn]);
     setLastWateredTimestamp(Date.now());
+    setJustLogged(true);
+    setCurrentTab('home'); // Return to dashboard where the plant is
     // Also update active trial days if matched
     if (newCheckIn.productUsed) {
       setTrials((prevTrials) =>
@@ -210,7 +218,7 @@ export default function App() {
                 Flarecast
               </span>
               <span className="text-[10px] text-[#5C736C] font-semibold tracking-wide">
-                See the pattern. Stop the flare.
+                Forecast the flare
               </span>
             </div>
           </div>
@@ -281,6 +289,18 @@ export default function App() {
               )}
             </div>
 
+            {/* Ask AI Care Assistant Button (Direct accessible AI Agent) */}
+            <button
+              onClick={() => setIsAIAssistantOpen(true)}
+              className="h-9 px-3 rounded-full bg-[#E8F2F0] hover:bg-[#D6ECE6] text-[#3B665E] border border-[#6FA79A]/30 flex items-center gap-1.5 text-xs font-bold shadow-2xs transition-colors"
+              title="Ask AI Care Assistant"
+              aria-label="Ask AI Care Assistant"
+            >
+              <Bot className="w-4 h-4 text-[#578C80]" />
+              <span className="hidden sm:inline">Ask AI</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            </button>
+
             {/* In-app Notification Bell */}
             <button
               onClick={() => setIsNotificationOpen(true)}
@@ -324,6 +344,14 @@ export default function App() {
               </button>
             );
           })}
+
+          <button
+            onClick={() => setIsAIAssistantOpen(true)}
+            className="py-2 px-3.5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-[#FAF6EF] text-[#3B665E] border border-[#6FA79A]/25 hover:bg-[#E8F2F0] transition-colors shrink-0"
+          >
+            <Bot className="w-4 h-4 text-[#6FA79A]" />
+            <span>Ask AI Agent</span>
+          </button>
         </div>
       </div>
 
@@ -345,13 +373,13 @@ export default function App() {
                   <div className="text-left">
                     <span className="block leading-tight">Snap Today's Check-In</span>
                     <span className="text-xs font-medium text-white/85">
-                      Under 10 seconds · Align with yesterday's ghost photo
+                      Fast 1-screen check-in · Under 10 seconds · 3 Taps
                     </span>
                   </div>
                 </div>
 
                 <div className="px-3 py-1 rounded-full bg-white/20 text-xs font-bold uppercase tracking-wider backdrop-blur-sm hidden sm:block">
-                  4 Taps
+                  Fast Tap
                 </div>
               </button>
             </div>
@@ -368,6 +396,16 @@ export default function App() {
               />
             ) : (
               <div className="h-44 bg-white rounded-3xl animate-pulse border border-[#6FA79A]/15" />
+            )}
+
+            {/* 1b. Accessible Spoken AI Audio Summary Briefing */}
+            {weatherData && (
+              <AudioSummaryCard
+                child={activeChild}
+                latestScore={latestScore}
+                weather={weatherData}
+                onOpenAssistant={() => setIsAIAssistantOpen(true)}
+              />
             )}
 
             {/* 2. Fitness-Style Activity Progress Rings */}
@@ -497,7 +535,13 @@ export default function App() {
       {/* DAILY CHECK-IN MODAL (Step 1-4 with Gemini AI analysis) */}
       <CheckInFlow
         isOpen={isCheckInOpen}
-        onClose={() => setIsCheckInOpen(false)}
+        onClose={() => {
+          setIsCheckInOpen(false);
+          if (justLogged) {
+            setLastWateredTimestamp(Date.now());
+            setJustLogged(false);
+          }
+        }}
         child={activeChild}
         previousCheckIns={childCheckIns}
         onSaveCheckIn={handleSaveCheckIn}
@@ -534,6 +578,29 @@ export default function App() {
         isOpen={isAddChildOpen}
         onClose={() => setIsAddChildOpen(false)}
         onAddChild={handleAddChild}
+      />
+
+      {/* FLOATING ACTION BUTTON: ASK AI AGENT */}
+      <button
+        type="button"
+        onClick={() => setIsAIAssistantOpen(true)}
+        className="no-print fixed bottom-20 md:bottom-6 right-4 md:right-8 z-40 px-4 py-2.5 rounded-full bg-[#2C3E38] text-white shadow-xl hover:bg-[#1E2B27] flex items-center gap-2 border border-[#6FA79A]/40 active:scale-95 transition-all"
+        aria-label="Open Flarecast AI Care Assistant"
+      >
+        <Bot className="w-4 h-4 text-[#9EE0D2]" />
+        <span className="text-xs font-bold">Ask AI Agent</span>
+        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+      </button>
+
+      {/* AI CARE ASSISTANT MODAL (Chatbot) */}
+      <AIAssistantModal
+        isOpen={isAIAssistantOpen}
+        onClose={() => setIsAIAssistantOpen(false)}
+        child={activeChild}
+        latestScore={latestScore}
+        recentCheckIns={childCheckIns}
+        trials={trials}
+        flareRisk={weatherData?.days[0]?.riskLevel || 'Low'}
       />
     </div>
   );

@@ -1,4 +1,5 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
+import type { Request, Response } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -201,6 +202,138 @@ Format response strictly in JSON.`;
       error: 'Failed to complete skin analysis',
       message: err.message,
     });
+  }
+});
+
+// Endpoint: AI Care Assistant Chatbot
+app.post('/api/care-agent-chat', async (req: Request, res: Response) => {
+  try {
+    const { message, history = [], childContext = {} } = req.body;
+    const {
+      name = 'your child',
+      age = 3,
+      skinScore = 84,
+      flareRisk = 'Low',
+      weatherSummary = 'Clear weather with normal humidity',
+      calmPlan = {},
+      activeTrial = null,
+    } = childContext;
+
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    if (aiClient) {
+      try {
+        const systemInstruction = `You are "Flarecast AI Care Assistant", a warm, knowledgeable, and empathetic pediatric eczema assistant supporting parents caring for young children with atopic dermatitis (eczema).
+Child Profile Context:
+- Name: ${name}, Age: ${age}
+- Current Skin Score: ${skinScore}/100
+- Today's Flare Risk: ${flareRisk}
+- Weather / Environment: ${weatherSummary}
+- Calm Plan Routine: ${calmPlan.morningMoisturizer || 'Gentle emollient'} in morning, ${calmPlan.eveningMoisturizer || 'Ceramide balm'} after lukewarm bath. Doctor: ${calmPlan.doctorName || 'Pediatrician'}.
+${activeTrial ? `- Active Product Trial: ${activeTrial.name} (Day ${activeTrial.daysLogged} of ${activeTrial.durationDays})` : ''}
+
+Guidelines:
+1. Speak with kindness, empathy, and practical clarity for tired parents. Keep responses concise (under 3 short paragraphs or bullet points).
+2. Answer questions about triggers (dry air under 30% humidity, sudden temperature drops, heat & sweat, fabrics, bath duration, food, pet contact), application timing (e.g. "Soak and Seal" within 3 minutes of bathing), and calm routines.
+3. If the user mentions fever, yellow crusting, spreading blisters, or severe infection symptoms, strongly advise immediate pediatrician or urgent care evaluation.
+4. Non-diagnostic boundary: Always remind the parent that you provide supportive care patterns, not medical diagnoses.`;
+
+        // Format conversation history
+        const formattedContents = [
+          ...history.map((turn: { role: string; content: string }) => ({
+            role: turn.role === 'user' ? 'user' : 'model',
+            parts: [{ text: turn.content }],
+          })),
+          {
+            role: 'user',
+            parts: [{ text: message }],
+          },
+        ];
+
+        const response = await aiClient.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: formattedContents,
+          config: {
+            systemInstruction,
+          },
+        });
+
+        const reply = response.text || "I'm here to help you monitor patterns and support Mia's skin. What would you like to know?";
+        return res.json({ reply });
+      } catch (err: any) {
+        console.warn('Gemini chat error, using smart fallback response:', err?.message);
+      }
+    }
+
+    // Smart context-aware fallback response
+    let fallbackReply = `For ${name}, keeping skin hydrated is essential today. Given the current ${flareRisk.toLowerCase()} flare risk, remember the "Soak & Seal" rule: apply ${calmPlan.eveningMoisturizer || 'moisturizer'} within 3 minutes of a lukewarm bath to lock in moisture. Let me know if you want tips on humidity, clothing fabrics, or soothing night itch!`;
+
+    if (/dry|humidity/i.test(message)) {
+      fallbackReply = `When humidity drops, skin loses moisture faster. For ${name}, consider running a cool-mist nursery humidifier to keep indoor air between 40% and 50%, and apply an extra thin layer of barrier ointment before bedtime.`;
+    } else if (/itch|scratch|night/i.test(message)) {
+      fallbackReply = `Nighttime itching can disrupt sleep for both you and ${name}. Try: (1) keeping the bedroom cool (18°–20°C / 65°–68°F), (2) 100% breathable cotton sleepwear, (3) keeping fingernails trimmed smooth, and (4) applying a chilled emollient right before sleep.`;
+    } else if (/bath|wash|soap/i.test(message)) {
+      fallbackReply = `Pediatric guidelines recommend short (5–10 min) lukewarm baths with a fragrance-free, soap-free cleanser. Avoid hot water, and pat skin gently with a soft towel—leave it slightly damp, then immediately apply ${name}'s moisturizer.`;
+    } else if (/product|trial|cream/i.test(message)) {
+      fallbackReply = `When testing a product like ${activeTrial?.name || 'a new moisturizer'}, apply it consistently to one spot for 10–14 days while logging check-ins. Flarecast will calculate before-and-after skin scores to give you a clear verdict!`;
+    }
+
+    return res.json({ reply: fallbackReply });
+  } catch (err: any) {
+    console.error('Care agent chat error:', err);
+    return res.status(500).json({ error: 'Failed to process chat message' });
+  }
+});
+
+// Endpoint: Generate Accessible Audio Summary Script
+app.post('/api/generate-daily-audio-summary', async (req: Request, res: Response) => {
+  try {
+    const {
+      childName = 'your child',
+      skinScore = 84,
+      flareRisk = 'Low',
+      tempC = 20,
+      humidity = 45,
+      calmRoutine = 'Lukewarm soak and ceramide moisturizer',
+    } = req.body;
+
+    if (aiClient) {
+      try {
+        const prompt = `Write a warm, concise, spoken audio briefing (3 to 4 sentences, roughly 45 words) for a tired parent caring for ${childName}.
+Status:
+- Child: ${childName}
+- Skin score: ${skinScore} out of 100
+- Flare risk today: ${flareRisk}
+- Weather: ${tempC}°C, ${humidity}% humidity
+- Calm Plan: ${calmRoutine}
+
+Rules:
+- Written purely to be read aloud (conversational, natural, friendly).
+- Mention the skin score and flare risk clearly.
+- Give one actionable tip for today's weather/humidity.
+- End with an encouraging sign-off like "You've got this today!".
+- Do not use markdown or symbols.`;
+
+        const response = await aiClient.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: prompt,
+        });
+
+        const script = response.text?.trim() || `Good morning! ${childName}'s skin score is ${skinScore}, with a ${flareRisk} flare risk today. Current humidity is ${humidity} percent at ${tempC} degrees Celsius. Be sure to keep up the calm routine with a lukewarm bath and moisturizer. You are doing a wonderful job!`;
+        return res.json({ script });
+      } catch (err: any) {
+        console.warn('Audio summary generation error:', err?.message);
+      }
+    }
+
+    // Fallback script
+    const script = `Good morning! ${childName}'s skin score is ${skinScore} out of 100, and today's flare risk is ${flareRisk}. With humidity at ${humidity} percent and temperature around ${tempC} degrees Celsius, remember to complete the evening soak and seal routine. You're doing an amazing job caring for ${childName}'s skin!`;
+    return res.json({ script });
+  } catch (err: any) {
+    console.error('Audio summary error:', err);
+    return res.status(500).json({ error: 'Failed to generate audio summary' });
   }
 });
 

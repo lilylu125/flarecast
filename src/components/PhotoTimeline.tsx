@@ -9,8 +9,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
+  ZoomIn,
 } from 'lucide-react';
 import { CheckIn, BodyArea } from '../types';
+import { PhotoZoomModal } from './PhotoZoomModal';
 
 interface PhotoTimelineProps {
   checkIns: CheckIn[];
@@ -22,6 +24,9 @@ export const PhotoTimeline: React.FC<PhotoTimelineProps> = ({ checkIns, childNam
   const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
   const [compareA, setCompareA] = useState<CheckIn | null>(null);
   const [compareB, setCompareB] = useState<CheckIn | null>(null);
+
+  // Zoom Lightbox modal state
+  const [zoomedCheckIn, setZoomedCheckIn] = useState<CheckIn | null>(null);
 
   // Time-lapse modal state
   const [isTimelapseOpen, setIsTimelapseOpen] = useState<boolean>(false);
@@ -81,6 +86,21 @@ export const PhotoTimeline: React.FC<PhotoTimelineProps> = ({ checkIns, childNam
   };
 
   const weekGroups = groupPhotosByWeek();
+
+  // Zoom navigation helpers
+  const currentZoomIndex = zoomedCheckIn
+    ? filteredCheckIns.findIndex((c) => c.id === zoomedCheckIn.id)
+    : -1;
+  const hasPrevZoom = currentZoomIndex > 0;
+  const hasNextZoom = currentZoomIndex >= 0 && currentZoomIndex < filteredCheckIns.length - 1;
+
+  const handlePrevZoom = () => {
+    if (hasPrevZoom) setZoomedCheckIn(filteredCheckIns[currentZoomIndex - 1]);
+  };
+
+  const handleNextZoom = () => {
+    if (hasNextZoom) setZoomedCheckIn(filteredCheckIns[currentZoomIndex + 1]);
+  };
 
   // Helper to handle compare selection
   const handleSelectForCompare = (item: CheckIn) => {
@@ -167,10 +187,23 @@ export const PhotoTimeline: React.FC<PhotoTimelineProps> = ({ checkIns, childNam
 
           <div className="grid grid-cols-2 gap-4">
             {/* Slot A */}
+            {/* Slot A */}
             <div className="bg-[#FAF6EF] p-3 rounded-2xl border border-[#EBE4D8] space-y-2">
-              <span className="text-[11px] font-bold uppercase text-[#578C80] block">
-                Photo A {compareA ? `· ${compareA.displayDate}` : '(Select below)'}
-              </span>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase text-[#578C80] block">
+                  Photo A {compareA ? `· ${compareA.displayDate}` : '(Select below)'}
+                </span>
+                {compareA && (
+                  <button
+                    onClick={() => setZoomedCheckIn(compareA)}
+                    className="text-[11px] font-bold text-[#578C80] flex items-center gap-1 hover:underline"
+                    title="Zoom in on Photo A"
+                  >
+                    <ZoomIn className="w-3.5 h-3.5" />
+                    <span>Zoom</span>
+                  </button>
+                )}
+              </div>
               {compareA ? (
                 <>
                   <div className="aspect-square rounded-xl overflow-hidden bg-slate-100">
@@ -199,9 +232,21 @@ export const PhotoTimeline: React.FC<PhotoTimelineProps> = ({ checkIns, childNam
 
             {/* Slot B */}
             <div className="bg-[#FAF6EF] p-3 rounded-2xl border border-[#EBE4D8] space-y-2">
-              <span className="text-[11px] font-bold uppercase text-[#B8684C] block">
-                Photo B {compareB ? `· ${compareB.displayDate}` : '(Select below)'}
-              </span>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase text-[#B8684C] block">
+                  Photo B {compareB ? `· ${compareB.displayDate}` : '(Select below)'}
+                </span>
+                {compareB && (
+                  <button
+                    onClick={() => setZoomedCheckIn(compareB)}
+                    className="text-[11px] font-bold text-[#B8684C] flex items-center gap-1 hover:underline"
+                    title="Zoom in on Photo B"
+                  >
+                    <ZoomIn className="w-3.5 h-3.5" />
+                    <span>Zoom</span>
+                  </button>
+                )}
+              </div>
               {compareB ? (
                 <>
                   <div className="aspect-square rounded-xl overflow-hidden bg-slate-100">
@@ -253,9 +298,13 @@ export const PhotoTimeline: React.FC<PhotoTimelineProps> = ({ checkIns, childNam
                   <div
                     key={item.id}
                     onClick={() => {
-                      if (isCompareMode) handleSelectForCompare(item);
+                      if (isCompareMode) {
+                        handleSelectForCompare(item);
+                      } else {
+                        setZoomedCheckIn(item);
+                      }
                     }}
-                    className={`bg-white rounded-2xl p-2.5 border transition-all cursor-pointer ${
+                    className={`bg-white rounded-2xl p-2.5 border transition-all cursor-pointer group ${
                       isSelectedA
                         ? 'ring-2 ring-[#6FA79A] border-transparent shadow-md'
                         : isSelectedB
@@ -267,8 +316,12 @@ export const PhotoTimeline: React.FC<PhotoTimelineProps> = ({ checkIns, childNam
                       <img
                         src={item.photoUrl}
                         alt={`Skin on ${item.displayDate}`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
+                      <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/60 text-white backdrop-blur-sm flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                        <ZoomIn className="w-2.5 h-2.5" />
+                        <span>Zoom</span>
+                      </div>
                       <div className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/60 text-white backdrop-blur-sm">
                         {item.skinScore} pts
                       </div>
@@ -450,6 +503,18 @@ export const PhotoTimeline: React.FC<PhotoTimelineProps> = ({ checkIns, childNam
           </div>
         </div>
       )}
+
+      {/* PHOTO ZOOM LIGHTBOX MODAL */}
+      <PhotoZoomModal
+        isOpen={!!zoomedCheckIn}
+        onClose={() => setZoomedCheckIn(null)}
+        photoUrl={zoomedCheckIn?.photoUrl || ''}
+        checkIn={zoomedCheckIn}
+        onPrev={handlePrevZoom}
+        onNext={handleNextZoom}
+        hasPrev={hasPrevZoom}
+        hasNext={hasNextZoom}
+      />
     </div>
   );
 };

@@ -9,8 +9,10 @@ import {
   Calendar,
   X,
   TrendingUp,
+  ZoomIn,
 } from 'lucide-react';
 import { ProductTrial, ProductType, ChildProfile } from '../types';
+import { PhotoZoomModal } from './PhotoZoomModal';
 
 interface ProductTrialsViewProps {
   trials: ProductTrial[];
@@ -27,6 +29,7 @@ export const ProductTrialsView: React.FC<ProductTrialsViewProps> = ({
   const [selectedCompletedTrial, setSelectedCompletedTrial] = useState<ProductTrial | null>(
     trials.find((t) => t.status === 'completed') || null
   );
+  const [zoomedPhotoData, setZoomedPhotoData] = useState<{ url: string; title: string } | null>(null);
 
   // New trial form state
   const [name, setName] = useState('');
@@ -218,12 +221,25 @@ export const ProductTrialsView: React.FC<ProductTrialsViewProps> = ({
               <span className="text-[11px] font-bold text-[#D9644F] block">
                 Worst Day (Baseline Flare)
               </span>
-              <div className="aspect-square rounded-2xl overflow-hidden bg-slate-100 shadow-sm border border-slate-200">
+              <div
+                onClick={() =>
+                  selectedCompletedTrial.worstPhotoUrl &&
+                  setZoomedPhotoData({
+                    url: selectedCompletedTrial.worstPhotoUrl,
+                    title: `${selectedCompletedTrial.name} · Worst Day`,
+                  })
+                }
+                className="aspect-square rounded-2xl overflow-hidden bg-slate-100 shadow-sm border border-slate-200 cursor-zoom-in relative group"
+              >
                 <img
                   src={selectedCompletedTrial.worstPhotoUrl}
                   alt="Worst skin day"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
+                <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/60 text-white backdrop-blur-sm flex items-center gap-1 opacity-90 group-hover:opacity-100">
+                  <ZoomIn className="w-2.5 h-2.5" />
+                  <span>Zoom</span>
+                </div>
               </div>
             </div>
 
@@ -231,12 +247,25 @@ export const ProductTrialsView: React.FC<ProductTrialsViewProps> = ({
               <span className="text-[11px] font-bold text-[#426C63] block">
                 Best Day (After 14 Days)
               </span>
-              <div className="aspect-square rounded-2xl overflow-hidden bg-slate-100 shadow-sm border border-slate-200">
+              <div
+                onClick={() =>
+                  selectedCompletedTrial.bestPhotoUrl &&
+                  setZoomedPhotoData({
+                    url: selectedCompletedTrial.bestPhotoUrl,
+                    title: `${selectedCompletedTrial.name} · Best Day`,
+                  })
+                }
+                className="aspect-square rounded-2xl overflow-hidden bg-slate-100 shadow-sm border border-slate-200 cursor-zoom-in relative group"
+              >
                 <img
                   src={selectedCompletedTrial.bestPhotoUrl}
                   alt="Best skin day"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
+                <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/60 text-white backdrop-blur-sm flex items-center gap-1 opacity-90 group-hover:opacity-100">
+                  <ZoomIn className="w-2.5 h-2.5" />
+                  <span>Zoom</span>
+                </div>
               </div>
             </div>
           </div>
@@ -393,6 +422,14 @@ export const ProductTrialsView: React.FC<ProductTrialsViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* PHOTO ZOOM MODAL */}
+      <PhotoZoomModal
+        isOpen={!!zoomedPhotoData}
+        onClose={() => setZoomedPhotoData(null)}
+        photoUrl={zoomedPhotoData?.url || ''}
+        title={zoomedPhotoData?.title}
+      />
     </div>
   );
 };

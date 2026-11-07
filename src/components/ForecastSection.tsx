@@ -232,9 +232,6 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
             <span className="text-xs font-bold text-[#5C736C] uppercase tracking-wider">
               3-Day Weather & Flare Outlook
             </span>
-            <span className="text-[11px] text-[#578C80] font-semibold">
-              Powered by Open-Meteo
-            </span>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
@@ -256,7 +253,7 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
                     {getWeatherIcon(day.conditionIcon, day.riskLevel)}
                   </div>
                   <div className="font-bold text-[#2C3E38]">
-                    {day.tempMaxF}° / {day.tempMinF}°
+                    {day.tempMaxC}°C / {day.tempMinC}°C
                   </div>
                   <span className="text-[10px] text-slate-500 block">
                     {day.humidityPercent}% RH
@@ -290,9 +287,6 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
               <h4 className="text-xs font-bold text-[#2C3E38]">
                 Indoor Sensor: {weather.currentIndoor.roomName}
               </h4>
-              <p className="text-[11px] text-[#5C736C]">
-                Simulated real-time nursery telemetry
-              </p>
             </div>
           </div>
 
@@ -306,7 +300,7 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1 font-bold text-[#2C3E38]">
               <Thermometer className="w-4 h-4 text-[#F4A98A]" />
-              <span>{weather.currentIndoor.tempF}°F</span>
+              <span>{weather.currentIndoor.tempC}°C</span>
             </div>
             <div className="flex items-center gap-1 font-black text-[#D9644F]">
               <Droplets className="w-4 h-4" />

@@ -7,7 +7,7 @@ export interface WeatherForecastResult {
   headlineSummary: string;
 }
 
-// Compute risk combining skin trend + humidity + temperature changes
+// Compute risk combining skin trend + humidity + temperature changes in Celsius
 export function computeFlareRisk({
   humidity,
   tempMax,
@@ -17,8 +17,8 @@ export function computeFlareRisk({
   childName = 'Child',
 }: {
   humidity: number;
-  tempMax: number;
-  tempMin: number;
+  tempMax: number; // in Celsius
+  tempMin: number; // in Celsius
   recentSkinScores: number[]; // last 3 days
   pastFlareTags?: string[];
   childName?: string;
@@ -51,17 +51,17 @@ export function computeFlareRisk({
   } else if (humidity <= 38) {
     riskPoints += 2;
     reasons.push(`Moderate dry air (${Math.round(humidity)}% humidity)`);
-  } else if (humidity >= 78 && tempMax >= 82) {
-    // Hot and sweaty
+  } else if (humidity >= 78 && tempMax >= 28) {
+    // Hot and sweaty in Celsius
     riskPoints += 3;
-    reasons.push(`High heat and humidity (${Math.round(tempMax)}°F) may cause sweat flare`);
+    reasons.push(`High heat and humidity (${Math.round(tempMax)}°C) may cause sweat flare`);
   }
 
-  // 3. Sudden cold temp drops
+  // 3. Sudden cold temp drops in Celsius
   const tempSpread = tempMax - tempMin;
-  if (tempMin < 45 && tempSpread >= 18) {
+  if (tempMin < 7 && tempSpread >= 9) {
     riskPoints += 2;
-    reasons.push(`Cold overnight drop to ${Math.round(tempMin)}°F`);
+    reasons.push(`Cold overnight drop to ${Math.round(tempMin)}°C`);
   }
 
   // Determine level
@@ -89,7 +89,7 @@ export function computeFlareRisk({
   return { riskLevel, reason };
 }
 
-// Fetch 3-day weather from Open-Meteo or fallback smoothly
+// Fetch 3-day weather from Open-Meteo or fallback smoothly (in Celsius)
 export async function fetchWeatherForecast(
   recentCheckIns: CheckIn[] = [],
   childName: string = 'Mia'
@@ -118,9 +118,10 @@ export async function fetchWeatherForecast(
   }
 
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean,precipitation_sum&current=temperature_2m,relative_humidity_2m&temperature_unit=fahrenheit&timezone=auto`;
+    // Default Open-Meteo temperature unit is Celsius
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean,precipitation_sum&current=temperature_2m,relative_humidity_2m&timezone=auto`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error('Open-Meteo returned status ' + res.status);
+    if (!res.ok) throw new Error('Weather API returned status ' + res.status);
     const data = await res.json();
 
     const days: WeatherDay[] = [];
@@ -136,8 +137,8 @@ export async function fetchWeatherForecast(
     for (let i = 0; i < Math.min(3, dates.length); i++) {
       const d = new Date(dates[i]);
       const humidity = humidities[i] ?? 45;
-      const tMax = maxTemps[i] ?? 65;
-      const tMin = minTemps[i] ?? 48;
+      const tMax = maxTemps[i] ?? 18;
+      const tMin = minTemps[i] ?? 9;
       const precip = precips[i] ?? 0;
 
       const { riskLevel, reason } = computeFlareRisk({
@@ -156,8 +157,8 @@ export async function fetchWeatherForecast(
       days.push({
         date: dates[i],
         dayName: dayLabels[i] || d.toLocaleDateString('en-US', { weekday: 'short' }),
-        tempMaxF: Math.round(tMax),
-        tempMinF: Math.round(tMin),
+        tempMaxC: Math.round(tMax),
+        tempMinC: Math.round(tMin),
         humidityPercent: Math.round(humidity),
         precipitationMm: precip,
         conditionIcon,
@@ -167,7 +168,7 @@ export async function fetchWeatherForecast(
     }
 
     const currentIndoor: IndoorSensorData = {
-      tempF: 68,
+      tempC: 20, // 20°C in Celsius
       humidityPercent: 24, // Flag dry nursery air
       status: 'Dry Air Alert',
       message: 'Nursery humidity at 24% tonight — consider running a cool-mist humidifier.',
@@ -182,13 +183,13 @@ export async function fetchWeatherForecast(
     };
   } catch (e) {
     console.warn('Using offline realistic weather forecast:', e);
-    // Reliable static forecast if network is offline
+    // Reliable static forecast in Celsius if network is offline
     const fallbackDays: WeatherDay[] = [
       {
         date: new Date().toISOString().split('T')[0],
         dayName: 'Today',
-        tempMaxF: 58,
-        tempMinF: 41,
+        tempMaxC: 14,
+        tempMinC: 5,
         humidityPercent: 26,
         precipitationMm: 0,
         conditionIcon: 'wind',
@@ -198,8 +199,8 @@ export async function fetchWeatherForecast(
       {
         date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
         dayName: 'Tomorrow',
-        tempMaxF: 52,
-        tempMinF: 38,
+        tempMaxC: 11,
+        tempMinC: 3,
         humidityPercent: 29,
         precipitationMm: 0,
         conditionIcon: 'cloud',
@@ -209,8 +210,8 @@ export async function fetchWeatherForecast(
       {
         date: new Date(Date.now() + 172800000).toISOString().split('T')[0],
         dayName: 'In 2 Days',
-        tempMaxF: 61,
-        tempMinF: 49,
+        tempMaxC: 16,
+        tempMinC: 9,
         humidityPercent: 48,
         precipitationMm: 1.2,
         conditionIcon: 'sun',
@@ -223,7 +224,7 @@ export async function fetchWeatherForecast(
       locationName: 'Local Weather Station',
       days: fallbackDays,
       currentIndoor: {
-        tempF: 68,
+        tempC: 20,
         humidityPercent: 24,
         status: 'Dry Air Alert',
         message: 'Nursery humidity at 24% tonight — dry air alert.',

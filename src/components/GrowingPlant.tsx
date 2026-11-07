@@ -39,9 +39,9 @@ export const GrowingPlant: React.FC<GrowingPlantProps> = ({
 
   // Trigger rain shower when lastWateredTimestamp updates
   useEffect(() => {
-    if (lastWateredTimestamp && Date.now() - lastWateredTimestamp < 20000) {
+    if (lastWateredTimestamp) {
       triggerRainAnimation(
-        `🌧️ Fresh check-in rain water showered ${childName}'s plant! New growth unlocked 🌱`
+        `🌧️ Fresh check-in rain water showering ${childName}'s plant! New growth unlocked 🌱`
       );
     }
   }, [lastWateredTimestamp]);
@@ -49,12 +49,12 @@ export const GrowingPlant: React.FC<GrowingPlantProps> = ({
   const triggerRainAnimation = (msg?: string) => {
     setIsRaining(true);
     setRainMessage(
-      msg || `🌧️ Rain water showering ${childName}'s plant! Leaves nourished and thriving.`
+      msg || `🌧️ Fresh check-in rain water showering ${childName}'s plant! Leaves nourished and thriving.`
     );
     const timer = setTimeout(() => {
       setIsRaining(false);
       setRainMessage('');
-    }, 4500);
+    }, 10000);
     return () => clearTimeout(timer);
   };
 
@@ -71,25 +71,24 @@ export const GrowingPlant: React.FC<GrowingPlantProps> = ({
               {childName}'s Care Garden
             </h3>
             <p className="text-xs text-[#5C736C]">
-              Goal: {weeklyGoal} of 7 days · Missed days never break your streak
+              Goal: {weeklyGoal} of 7 days · Daily consistent care
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Water Garden Button */}
-          <button
-            onClick={() => triggerRainAnimation()}
-            className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${
-              isRaining
-                ? 'bg-[#E8F2F0] text-[#426C63] border border-[#6FA79A]/40'
-                : 'bg-[#F2F7F6] text-[#578C80] hover:bg-[#E2EDE9]'
-            }`}
-            title="Produce rain water for the plant"
-          >
-            <CloudRain className={`w-3.5 h-3.5 ${isRaining ? 'animate-bounce text-[#6FA79A]' : ''}`} />
-            <span>{isRaining ? 'Raining Water...' : 'Rain Water'}</span>
-          </button>
+          {/* Automatic Rain Indicator (Triggers automatically after logging) */}
+          {isRaining ? (
+            <div className="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-[#E8F2F0] text-[#3B665E] border border-[#6FA79A]/40 shadow-xs animate-pulse">
+              <CloudRain className="w-3.5 h-3.5 animate-bounce text-[#6FA79A]" />
+              <span>Rain Shower Active 🌧️</span>
+            </div>
+          ) : (
+            <div className="px-2.5 py-1 rounded-full text-xs font-semibold text-[#5C736C] bg-[#FAF6EF] border border-[#EBE4D8] flex items-center gap-1.5">
+              <Droplets className="w-3.5 h-3.5 text-[#6FA79A]" />
+              <span>Rains on log</span>
+            </div>
+          )}
 
           <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#FAF6EF] border border-[#EBE4D8] rounded-full text-xs font-bold text-[#578C80]">
             <Sparkles className="w-3.5 h-3.5 text-[#E8B04B]" />

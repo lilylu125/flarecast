@@ -74,8 +74,8 @@ export interface ProductTrial {
 export interface WeatherDay {
   date: string;
   dayName: string;
-  tempMaxF: number;
-  tempMinF: number;
+  tempMaxC: number;
+  tempMinC: number;
   humidityPercent: number;
   precipitationMm: number;
   conditionIcon: 'sun' | 'cloud' | 'rain' | 'wind';
@@ -84,7 +84,7 @@ export interface WeatherDay {
 }
 
 export interface IndoorSensorData {
-  tempF: number;
+  tempC: number;
   humidityPercent: number;
   status: 'Ideal' | 'Dry Air Alert' | 'Too Humid';
   message: string;
