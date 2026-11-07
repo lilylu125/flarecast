@@ -83,7 +83,7 @@ export function computeFlareRisk({
       ? `${reasons[0]}. Monitor cheeks & creases after bedtime.`
       : `Moderate sensitivity expected. Stick to baseline routine.`;
   } else {
-    reason = `Gentle outdoor conditions (${Math.round(humidity)}% humidity). Clear skies for ${childName} today ☀️`;
+    reason = `Gentle outdoor conditions (${Math.round(humidity)}% humidity). Clear skies for ${childName} today`;
   }
 
   return { riskLevel, reason };
@@ -216,7 +216,7 @@ export async function fetchWeatherForecast(
         precipitationMm: 1.2,
         conditionIcon: 'sun',
         riskLevel: 'Low',
-        riskReason: `Humidity recovers to 48%. Clear skies and calmer skin barrier for ${childName} ☀️`,
+        riskReason: `Humidity recovers to 48%. Clear skies and calmer skin barrier for ${childName}`,
       },
     ];
 
