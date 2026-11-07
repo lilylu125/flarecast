@@ -1,0 +1,6 @@
+{
+  "name": "Flarecast",
+  "description": "Pediatric eczema tracking and flare-prediction app for parents. See the pattern. Stop the flare.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
