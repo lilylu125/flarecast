@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { CheckIn } from '../types';
-import { Info } from 'lucide-react';
 
 interface TrendChartProps {
   checkIns: CheckIn[];
@@ -54,9 +53,6 @@ export const TrendChart: React.FC<TrendChartProps> = ({ checkIns, childName }) =
           <h3 className="text-sm font-bold text-[#2C3E38] tracking-tight">
             14-Day Skin Score Trend
           </h3>
-          <p className="text-xs text-[#5C736C]">
-            Higher is clearer skin (0 = active flare, 100 = calm barrier)
-          </p>
         </div>
         <div className="text-right">
           <span className="text-xs text-[#5C736C]">14-Day Avg</span>
@@ -194,12 +190,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ checkIns, childName }) =
               Close
             </button>
           </div>
-        ) : (
-          <div className="mt-2 flex items-center gap-1.5 text-[11px] text-[#6A857D]">
-            <Info className="w-3.5 h-3.5 text-[#6FA79A]" />
-            <span>Tap any dot to inspect that day's skin score and clinical context</span>
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

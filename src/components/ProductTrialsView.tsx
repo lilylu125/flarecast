@@ -75,9 +75,6 @@ export const ProductTrialsView: React.FC<ProductTrialsViewProps> = ({
           <h2 className="text-base font-bold text-[#2C3E38] mt-0.5">
             Product Trials & Verdicts
           </h2>
-          <p className="text-xs text-[#5C736C]">
-            Test one product at a time for 14 days to stop guessing what works.
-          </p>
         </div>
 
         <button

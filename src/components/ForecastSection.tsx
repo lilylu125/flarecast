@@ -171,7 +171,6 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
               <span>{comparisonText}</span>
             </div>
 
-            <p className="text-xs text-[#4A645D] leading-relaxed">{statusSummary}</p>
           </div>
 
           {/* Plant */}
@@ -383,9 +382,7 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
               </>
             ) : (
               <>
-                <span className="text-[11px] text-[#5C736C]">
-                  Plug in the Flarecast sensor via USB to see live readings.
-                </span>
+                <span />
                 <button
                   onClick={() => void sensor.connect()}
                   disabled={sensor.status === 'connecting'}
@@ -396,9 +393,7 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
               </>
             )
           ) : (
-            <span className="text-[11px] text-[#5C736C]">
-              Live sensor needs Chrome or Edge on a laptop, opened outside the AI Studio preview.
-            </span>
+            <span className="text-[11px] text-[#5C736C]">Live sensor works in Chrome on a laptop</span>
           )}
         </div>
       </div>

@@ -66,9 +66,6 @@ export const CalmPlanCard: React.FC<CalmPlanCardProps> = ({
                   </span>
                 )}
               </div>
-              <p className="text-xs text-[#5C736C]">
-                Prescribed by {child.calmPlan.doctorName || 'Doctor'}
-              </p>
             </div>
           </div>
 

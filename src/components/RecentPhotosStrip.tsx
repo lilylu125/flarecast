@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Images, ChevronDown, ChevronUp } from 'lucide-react';
+import { Images, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { CheckIn } from '../types';
 import { PhotoTimeline } from './PhotoTimeline';
 
@@ -8,6 +8,7 @@ interface RecentPhotosStripProps {
   childName: string;
   /** How many recent photos to show before expanding. */
   count?: number;
+  onDeleteCheckIn?: (id: string) => void;
 }
 
 const statusDot: Record<string, string> = {
@@ -18,7 +19,7 @@ const statusDot: Record<string, string> = {
 
 const statusFromScore = (score: number) => (score >= 75 ? 'green' : score >= 50 ? 'yellow' : 'red');
 
-export const RecentPhotosStrip: React.FC<RecentPhotosStripProps> = ({ checkIns, childName, count = 5 }) => {
+export const RecentPhotosStrip: React.FC<RecentPhotosStripProps> = ({ checkIns, childName, count = 5, onDeleteCheckIn }) => {
   const [expanded, setExpanded] = useState(false);
   const withPhotos = checkIns.filter((c) => c.photoUrl);
   const recent = withPhotos.slice(-count);
@@ -32,9 +33,6 @@ export const RecentPhotosStrip: React.FC<RecentPhotosStripProps> = ({ checkIns, 
           </div>
           <div>
             <h3 className="text-sm font-bold text-[#2C3E38] tracking-tight">Photo Log</h3>
-            <p className="text-xs text-[#5C736C]">
-              {expanded ? `All of ${childName}'s photos` : `Last ${recent.length} check-ins`}
-            </p>
           </div>
         </div>
 
@@ -61,16 +59,29 @@ export const RecentPhotosStrip: React.FC<RecentPhotosStripProps> = ({ checkIns, 
           No photos yet. Snap today's check-in to start {childName}'s photo log.
         </p>
       ) : expanded ? (
-        <PhotoTimeline checkIns={checkIns} childName={childName} />
+        <PhotoTimeline checkIns={checkIns} childName={childName} onDeleteCheckIn={onDeleteCheckIn} />
       ) : (
         <div className="grid grid-cols-5 gap-2">
           {recent.map((c) => {
             const status = c.aiAnalysis?.overallStatus || statusFromScore(c.skinScore);
             return (
+              <div key={c.id} className="group relative text-left">
+                {onDeleteCheckIn && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm(`Delete the ${c.displayDate} check-in?`)) onDeleteCheckIn(c.id);
+                    }}
+                    className="absolute -top-1.5 -left-1.5 z-10 w-6 h-6 rounded-full bg-white border border-[#EBE4D8] text-[#D9644F] flex items-center justify-center shadow-sm hover:bg-[#FDEEEB]"
+                    aria-label={`Delete ${c.displayDate} check-in`}
+                    title="Delete check-in"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               <button
-                key={c.id}
                 onClick={() => setExpanded(true)}
-                className="group text-left"
+                className="w-full text-left"
                 title={`${c.displayDate} · ${c.bodyArea} · score ${c.skinScore}`}
               >
                 <div className="relative aspect-square rounded-2xl overflow-hidden border border-[#EBE4D8] bg-[#FAF6EF]">
@@ -86,6 +97,7 @@ export const RecentPhotosStrip: React.FC<RecentPhotosStripProps> = ({ checkIns, 
                   <span className="text-[10px] font-semibold text-[#5C736C] tabular-nums">{c.skinScore}</span>
                 </div>
               </button>
+              </div>
             );
           })}
         </div>

@@ -61,20 +61,21 @@ export const RedFlagAlert: React.FC<RedFlagAlertProps> = ({
               <strong>Detected signs:</strong> {reason}
             </p>
           )}
-          <p className="text-xs text-[#6A857D]">
-            Eczema skin has a fragile barrier that can be vulnerable to bacterial (impetigo) or viral (eczema herpeticum) complications. Routine scores are hidden until reviewed by a healthcare professional.
-          </p>
         </div>
 
         {/* Pediatric Quick Actions */}
         <div className="space-y-2.5 pt-1">
+          {/* Demo placeholder number — replace with the family's real pediatrician before launch */}
           <a
-            href="tel:911"
+            href="tel:+15550100123"
             className="w-full h-12 rounded-2xl bg-[#D9644F] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#D9644F]/25 hover:bg-[#C2523E] transition-colors"
           >
             <PhoneCall className="w-4 h-4" />
-            <span>Call Pediatrician ({doctorName})</span>
+            <span>Call {doctorName || 'your pediatrician'}</span>
           </a>
+          <p className="text-[11px] text-center text-[#6A857D]">
+            Placeholder number for demo: (555) 010-0123
+          </p>
 
           <button
             onClick={onClose}

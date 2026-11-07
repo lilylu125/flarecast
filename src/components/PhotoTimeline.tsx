@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Filter,
   ZoomIn,
+  Trash2,
 } from 'lucide-react';
 import { CheckIn, BodyArea } from '../types';
 import { PhotoZoomModal } from './PhotoZoomModal';
@@ -17,9 +18,10 @@ import { PhotoZoomModal } from './PhotoZoomModal';
 interface PhotoTimelineProps {
   checkIns: CheckIn[];
   childName: string;
+  onDeleteCheckIn?: (id: string) => void;
 }
 
-export const PhotoTimeline: React.FC<PhotoTimelineProps> = ({ checkIns, childName }) => {
+export const PhotoTimeline: React.FC<PhotoTimelineProps> = ({ checkIns, childName, onDeleteCheckIn }) => {
   const [selectedArea, setSelectedArea] = useState<string>('all');
   const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
   const [compareA, setCompareA] = useState<CheckIn | null>(null);
@@ -325,6 +327,20 @@ export const PhotoTimeline: React.FC<PhotoTimelineProps> = ({ checkIns, childNam
                       <div className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/60 text-white backdrop-blur-sm">
                         {item.skinScore} pts
                       </div>
+                      {onDeleteCheckIn && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`Delete the ${item.displayDate} check-in?`)) onDeleteCheckIn(item.id);
+                          }}
+                          className="absolute bottom-1.5 right-1.5 p-1.5 rounded-lg bg-white/90 text-[#D9644F] hover:bg-white shadow-sm"
+                          aria-label={`Delete ${item.displayDate} check-in`}
+                          title="Delete check-in"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
 
                     <div className="space-y-1">

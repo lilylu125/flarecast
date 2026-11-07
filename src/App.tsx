@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Home,
   Camera,
+  Check,
   FlaskConical,
   FileSpreadsheet,
   Bell,
@@ -38,7 +39,6 @@ import {
 import { ForecastSection } from './components/ForecastSection';
 import { AudioSummaryCard } from './components/AudioSummaryCard';
 import { AIAssistantModal } from './components/AIAssistantModal';
-import { ProgressRings } from './components/ProgressRings';
 import { TrendChart } from './components/TrendChart';
 import { GrowingPlant } from './components/GrowingPlant';
 import { CalmPlanCard } from './components/CalmPlanCard';
@@ -163,6 +163,13 @@ export default function App() {
       setCheckIns(updated);
     }
   };
+
+  const handleDeleteCheckIn = (id: string) => {
+    setCheckIns((prev) => prev.filter((c) => c.id !== id));
+  };
+
+  const todayKey = new Date().toISOString().split('T')[0];
+  const loggedToday = childCheckIns.some((c) => c.date === todayKey && /-\d{13}$/.test(c.id));
 
   const handleSaveCheckIn = (newCheckIn: CheckIn) => {
     setCheckIns((prev) => [...prev, newCheckIn]);
@@ -337,29 +344,32 @@ export default function App() {
         {/* TAB 1: HOME DASHBOARD */}
         {currentTab === 'home' && (
           <div className="space-y-5 animate-fade-in">
-            {/* Primary Action Button (Big & prominent for 1-handed midnight use) */}
-            <div className="w-full">
-              <button
-                onClick={() => setIsCheckInOpen(true)}
-                className="w-full py-4 px-6 rounded-3xl bg-gradient-to-r from-[#6FA79A] to-[#558E82] text-white font-extrabold text-base sm:text-lg flex items-center justify-between shadow-lg shadow-[#6FA79A]/25 active:scale-[0.99] hover:brightness-105 transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
-                    <Camera className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <span className="block leading-tight">Snap Today's Check-In</span>
-                    <span className="text-xs font-medium text-white/85">
-                      Fast 1-screen check-in · Under 10 seconds · 3 Taps
-                    </span>
-                  </div>
-                </div>
-
-                <div className="px-3 py-1 rounded-full bg-white/20 text-xs font-bold uppercase tracking-wider backdrop-blur-sm hidden sm:block">
-                  Fast Tap
-                </div>
-              </button>
-            </div>
+            {/* START HERE: the one primary daily action */}
+            <button
+              onClick={() => setIsCheckInOpen(true)}
+              className={`relative w-full py-6 px-6 rounded-3xl text-white flex items-center gap-4 shadow-xl active:scale-[0.99] hover:brightness-105 transition-all ${
+                loggedToday
+                  ? 'bg-[#426C63] shadow-[#426C63]/20'
+                  : 'bg-gradient-to-r from-[#6FA79A] to-[#558E82] shadow-[#6FA79A]/35 ring-4 ring-[#6FA79A]/25'
+              }`}
+            >
+              {!loggedToday && (
+                <span className="absolute -top-2.5 left-6 px-2.5 py-0.5 rounded-full bg-[#F4A98A] text-white text-[11px] font-black uppercase tracking-wider shadow-sm">
+                  Start here
+                </span>
+              )}
+              <span className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+                {loggedToday ? <Check className="w-8 h-8" /> : <Camera className="w-8 h-8" />}
+              </span>
+              <span className="text-left">
+                <span className="block text-xl sm:text-2xl font-black leading-tight">
+                  {loggedToday ? 'Logged today' : "Snap today's check-in"}
+                </span>
+                <span className="block text-sm font-semibold text-white/85">
+                  {loggedToday ? 'Tap to add another' : 'Takes about 10 seconds'}
+                </span>
+              </span>
+            </button>
 
             {/* 1. Today's Forecast Card & Indoor Sensor */}
             {weatherData ? (
@@ -397,15 +407,8 @@ export default function App() {
               />
             )}
 
-            {/* 2. Fitness-Style Activity Progress Rings */}
-            <ProgressRings
-              checkIns={{ current: last7DaysCheckIns, goal: 5 }}
-              calmPlan={{ current: calmPlanDoneCount, goal: 7 }}
-              photos={{ current: photosCount, goal: 5 }}
-            />
-
             {/* 3. Recent Photo Log (expands to the full timeline) */}
-            <RecentPhotosStrip checkIns={childCheckIns} childName={activeChild.name} />
+            <RecentPhotosStrip checkIns={childCheckIns} childName={activeChild.name} onDeleteCheckIn={handleDeleteCheckIn} />
 
             {/* 4. 14-Day Weekly Severity Trend Line Chart */}
             <TrendChart checkIns={childCheckIns} childName={activeChild.name} />

@@ -137,20 +137,9 @@ export const AudioSummaryCard: React.FC<AudioSummaryCardProps> = ({
             <Volume2 className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] uppercase tracking-wider font-extrabold text-[#578C80]">
-                Accessibility Audio Briefing
-              </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAF6EF] text-[#B8684C] font-bold">
-                Spoken AI Summary
-              </span>
-            </div>
             <h3 className="text-sm font-bold text-[#2C3E38]">
               Listen to {child.name}'s Daily Flare Forecast
             </h3>
-            <p className="text-xs text-[#5C736C]">
-              Hands-free spoken summary of skin score, risk & calm plan
-            </p>
           </div>
         </div>
 

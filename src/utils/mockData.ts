@@ -13,7 +13,7 @@ export const INITIAL_CHILDREN: ChildProfile[] = [
       prescribedRoutine: 'Hydrocortisone 1% ointment on active red patches only, twice daily for up to 3 days',
       bathRoutine: '10-minute soak in lukewarm water with colloidal oat wash, pat dry gently (do not rub)',
       knownTriggers: ['Dry cold air (<30% humidity)', 'Wool sweaters', 'Sweaty park days', 'Teething stress'],
-      doctorName: 'Dr. Sarah Lin, Pediatric Dermatology',
+      doctorName: 'Dr. Santa Claus (demo)',
     },
   },
   {
@@ -27,7 +27,7 @@ export const INITIAL_CHILDREN: ChildProfile[] = [
       prescribedRoutine: 'Barrier barrier zinc paste on drool rash cheeks as needed',
       bathRoutine: 'Quick 5-min lukewarm rinse, fragrance-free cleanser only 2x/week',
       knownTriggers: ['Drool rash from teething', 'Synthetic sleep sacks', 'Pet dander'],
-      doctorName: 'Dr. Sarah Lin, Pediatric Dermatology',
+      doctorName: 'Dr. Santa Claus (demo)',
     },
   },
 ];
@@ -78,7 +78,7 @@ export function generateMockCheckIns(childId: string = 'child-mia'): CheckIn[] {
       itchScore = i === 10 ? 5 : 4;
       skinScore = i === 10 ? 34 : 45;
       severity = 'flare';
-      tags = ['Bad night', 'Daycare', 'Bath'];
+      tags = ['Bad night', 'Daycare/School', 'Bath'];
       productUsed = {
         name: 'Hydrocortisone 1% (Calm Plan)',
         amount: '1 FTU',
