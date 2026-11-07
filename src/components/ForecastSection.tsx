@@ -16,7 +16,8 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { WeatherForecastResult } from '../utils/weatherForecast';
-import { FlareRisk } from '../types';
+import { FlareRisk, IndoorSensorData } from '../types';
+import { useIndoorSensor, DRY_AIR_THRESHOLD } from '../hooks/useIndoorSensor';
 
 interface ForecastSectionProps {
   weather: WeatherForecastResult;
@@ -25,7 +26,14 @@ interface ForecastSectionProps {
   previousWeekAvgScore: number;
   onRefreshWeather?: () => void;
   isLoadingWeather?: boolean;
+  /** Opens the check-in flow when the indoor sensor's reminder alarm fires or its button is pressed. */
+  onSensorCheckInPrompt?: () => void;
 }
+
+const TOO_HUMID_THRESHOLD = 60;
+
+const indoorStatusFor = (humidity: number): IndoorSensorData['status'] =>
+  humidity < DRY_AIR_THRESHOLD ? 'Dry Air Alert' : humidity > TOO_HUMID_THRESHOLD ? 'Too Humid' : 'Ideal';
 
 export const ForecastSection: React.FC<ForecastSectionProps> = ({
   weather,
@@ -34,9 +42,37 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
   previousWeekAvgScore,
   onRefreshWeather,
   isLoadingWeather,
+  onSensorCheckInPrompt,
 }) => {
+  // Live ESP32 indoor sensor over USB (Web Serial). Falls back to simulated data when not connected.
+  const acknowledgeRef = React.useRef<(() => Promise<void>) | null>(null);
+  const sensor = useIndoorSensor({
+    onCheckInPrompt: () => {
+      onSensorCheckInPrompt?.();
+      void acknowledgeRef.current?.(); // silence the device alarm once the check-in screen opens
+    },
+  });
+  acknowledgeRef.current = sensor.acknowledge;
+
+  const isLiveSensor = sensor.status === 'connected' && sensor.reading !== null;
+  const indoor: IndoorSensorData = isLiveSensor
+    ? {
+        roomName: weather.currentIndoor.roomName,
+        tempC: Math.round(sensor.reading!.t * 10) / 10,
+        humidityPercent: Math.round(sensor.reading!.h),
+        status: indoorStatusFor(sensor.reading!.h),
+        message: '',
+      }
+    : weather.currentIndoor;
+
   const todayForecast = weather.days[0];
-  const currentRisk = todayForecast?.riskLevel || 'Low';
+  const forecastRisk = todayForecast?.riskLevel || 'Low';
+  // Dry indoor air from the live sensor raises a Low forecast to Medium.
+  const liveDryAir = isLiveSensor && sensor.isDryAir;
+  const currentRisk: FlareRisk = liveDryAir && forecastRisk === 'Low' ? 'Medium' : forecastRisk;
+  const riskReason = liveDryAir
+    ? `Indoor humidity is ${indoor.humidityPercent}% in the ${indoor.roomName.toLowerCase()} — dry air can dry out ${childName}'s skin. ${todayForecast?.riskReason || ''}`.trim()
+    : todayForecast?.riskReason || weather.headlineSummary;
 
   // Compare today's score to last week's avg
   const scoreDiff = latestSkinScore - previousWeekAvgScore;
@@ -223,7 +259,7 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
 
         {/* One-line Plain-language Reason */}
         <p className="text-xs sm:text-sm text-[#2C3E38] font-medium mt-3 leading-relaxed bg-white/70 backdrop-blur-sm p-3 rounded-2xl border border-black/5">
-          "{todayForecast?.riskReason || weather.headlineSummary}"
+          "{riskReason}"
         </p>
 
         {/* 3-Day Micro Forecast Strip */}
@@ -278,21 +314,39 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
 
       {/* 3. INDOOR SENSOR CARD */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 border border-[#6FA79A]/15 shadow-sm">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-2 gap-2">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-xl bg-[#FAF6EF] flex items-center justify-center text-[#578C80]">
               <Droplets className="w-4 h-4 text-[#6FA79A]" />
             </div>
             <div>
               <h4 className="text-xs font-bold text-[#2C3E38]">
-                Indoor Sensor: {weather.currentIndoor.roomName}
+                Indoor Sensor: {indoor.roomName}
               </h4>
+              <p className="text-[11px] text-[#5C736C] flex items-center gap-1">
+                {isLiveSensor ? (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#578C80] animate-pulse" />
+                    Live from your Flarecast sensor
+                  </>
+                ) : sensor.status === 'connected' ? (
+                  'Connected · waiting for first reading…'
+                ) : null}
+              </p>
             </div>
           </div>
 
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FDEEEB] text-[#D9644F] flex items-center gap-1">
-            <AlertTriangle className="w-3 h-3" />
-            {weather.currentIndoor.status}
+          <span
+            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 shrink-0 ${
+              indoor.status === 'Ideal'
+                ? 'bg-[#E8F2F0] text-[#426C63]'
+                : indoor.status === 'Too Humid'
+                ? 'bg-[#FEF6E8] text-[#B88A3B]'
+                : 'bg-[#FDEEEB] text-[#D9644F]'
+            }`}
+          >
+            {indoor.status === 'Ideal' ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+            {indoor.status}
           </span>
         </div>
 
@@ -300,17 +354,62 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1 font-bold text-[#2C3E38]">
               <Thermometer className="w-4 h-4 text-[#F4A98A]" />
-              <span>{weather.currentIndoor.tempC}°C</span>
+              <span>
+                {indoor.tempC}°C
+              </span>
             </div>
-            <div className="flex items-center gap-1 font-black text-[#D9644F]">
+            <div
+              className={`flex items-center gap-1 font-black ${
+                indoor.status === 'Ideal' ? 'text-[#426C63]' : indoor.status === 'Too Humid' ? 'text-[#B88A3B]' : 'text-[#D9644F]'
+              }`}
+            >
               <Droplets className="w-4 h-4" />
-              <span>{weather.currentIndoor.humidityPercent}% RH (Very Dry)</span>
+              <span>
+                {indoor.humidityPercent}% RH
+                {indoor.status === 'Dry Air Alert' ? ' (Very Dry)' : indoor.status === 'Too Humid' ? ' (Humid)' : ''}
+              </span>
             </div>
           </div>
 
           <span className="text-[11px] text-[#4A645D] font-medium hidden sm:inline">
             Ideal nursery humidity: 40%–50%
           </span>
+        </div>
+
+        {/* Connect / disconnect the ESP32 over USB */}
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          {sensor.supported ? (
+            sensor.status === 'connected' ? (
+              <>
+                <span className="text-[11px] text-[#426C63] font-semibold">
+                  {sensor.alarmOn ? 'Photo reminder ringing — open today\'s check-in' : 'Sensor connected over USB'}
+                </span>
+                <button
+                  onClick={() => void sensor.disconnect()}
+                  className="text-[11px] font-bold px-3 py-1.5 rounded-xl border border-[#EBE4D8] text-[#5C736C] hover:bg-[#FAF6EF]"
+                >
+                  Disconnect
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="text-[11px] text-[#5C736C]">
+                  Plug in the Flarecast sensor via USB to see live readings.
+                </span>
+                <button
+                  onClick={() => void sensor.connect()}
+                  disabled={sensor.status === 'connecting'}
+                  className="text-[11px] font-bold px-3 py-1.5 rounded-xl bg-[#6FA79A] text-white hover:bg-[#578C80] disabled:opacity-60"
+                >
+                  {sensor.status === 'connecting' ? 'Connecting…' : 'Connect indoor sensor'}
+                </button>
+              </>
+            )
+          ) : (
+            <span className="text-[11px] text-[#5C736C]">
+              Live sensor needs Chrome or Edge on a laptop, opened outside the AI Studio preview.
+            </span>
+          )}
         </div>
       </div>
     </div>

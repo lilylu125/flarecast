@@ -393,6 +393,7 @@ export default function App() {
                 previousWeekAvgScore={previousWeekAvg}
                 onRefreshWeather={() => {}}
                 isLoadingWeather={isLoadingWeather}
+                onSensorCheckInPrompt={() => setIsCheckInOpen(true)}
               />
             ) : (
               <div className="h-44 bg-white rounded-3xl animate-pulse border border-[#6FA79A]/15" />

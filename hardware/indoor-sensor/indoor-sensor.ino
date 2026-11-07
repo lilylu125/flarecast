@@ -29,7 +29,7 @@
 #include <DHT.h>
 #include <Preferences.h>
 #if USE_BLE
-//#include <NimBLEDevice.h>
+#include <NimBLEDevice.h>
 #endif
 
 // ---------- Pins ----------
