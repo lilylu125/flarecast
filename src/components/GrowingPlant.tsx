@@ -245,8 +245,8 @@ export const GrowingPlant: React.FC<GrowingPlantProps> = ({
 
   if (compact) {
     return (
-      <div className="flex flex-col items-center justify-center text-center shrink-0" title={`${streakDays}-day streak · ${checkInsThisWeek}/${weeklyGoal} check-ins this week`}>
-        <div className={`rounded-2xl bg-[#FAF6EF] border border-[#EBE4D8]/60 px-2 pt-1 transition-shadow ${isRaining ? 'ring-2 ring-[#88C5B8]' : ''}`}>
+      <div className="flex flex-col items-center justify-center text-center shrink-0" title={`${streakDays}-day streak`}>
+        <div>
           {plantSvg}
         </div>
         <span className="mt-1 text-[11px] font-bold text-[#426C63]">
@@ -254,7 +254,7 @@ export const GrowingPlant: React.FC<GrowingPlantProps> = ({
           {isRaining && <span className="text-[#6FA79A] animate-pulse"> 💧</span>}
         </span>
         <span className="text-[10px] font-semibold text-[#5C736C]">
-          🔥 {streakDays}-day streak · {checkInsThisWeek}/{weeklyGoal} this week
+          🔥 {streakDays}-day streak
         </span>
       </div>
     );

@@ -8,7 +8,6 @@ import {
   Droplets,
   AlertTriangle,
   Sparkles,
-  MapPin,
   TrendingDown,
   TrendingUp,
   Minus,
@@ -149,13 +148,6 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
 
           {/* Current skin status */}
           <div className="min-w-0 space-y-2 col-span-2 sm:col-span-1 order-3 sm:order-2">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#5C736C]">
-                Current Skin Status
-              </span>
-              <span className="text-slate-300">·</span>
-              <span className="text-xs font-semibold text-[#426C63]">{childName}</span>
-            </div>
 
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border shadow-2xs tracking-wide">
               <span
@@ -197,12 +189,6 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
             />
           </div>
 
-          {/* Pointer indicator and spectrum labels */}
-          <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 px-0.5">
-            <span className="text-[#D9644F]">0 Flare</span>
-            <span className="text-[#B88A3B]">50 Moderate</span>
-            <span className="text-[#426C63]">100 Calm Barrier</span>
-          </div>
         </div>
       </div>
 
@@ -220,10 +206,6 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
         >
           <div className="flex items-start justify-between gap-2">
             <div className="space-y-1 min-w-0">
-              <div className="flex items-center gap-1.5 text-xs text-[#5C736C]">
-                <MapPin className="w-3.5 h-3.5 text-[#6FA79A] shrink-0" />
-                <span className="font-semibold truncate">{weather.locationName}</span>
-              </div>
               <div className="flex items-baseline gap-2 flex-wrap">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#5C736C]">Flare risk</span>
                 <span
@@ -361,7 +343,7 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
                 </button>
               )
             ) : (
-              <span className="text-[11px] text-[#5C736C]">Live sensor works in Chrome on a laptop</span>
+              null
             )}
           </div>
         </div>

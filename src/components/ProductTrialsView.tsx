@@ -69,9 +69,6 @@ export const ProductTrialsView: React.FC<ProductTrialsViewProps> = ({
       {/* Header with Start Trial CTA */}
       <div className="flex items-center justify-between bg-white rounded-3xl p-5 border border-[#6FA79A]/15 shadow-sm">
         <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#6FA79A]">
-            Scientific Method for Sensitive Skin
-          </span>
           <h2 className="text-base font-bold text-[#2C3E38] mt-0.5">
             Product Trials & Verdicts
           </h2>
