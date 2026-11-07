@@ -8,6 +8,8 @@ interface GrowingPlantProps {
   childName: string;
   reminderTime: string;
   lastWateredTimestamp?: number;
+  /** Small plant-only version for the dashboard score card. */
+  compact?: boolean;
 }
 
 export const GrowingPlant: React.FC<GrowingPlantProps> = ({
@@ -17,6 +19,7 @@ export const GrowingPlant: React.FC<GrowingPlantProps> = ({
   childName,
   reminderTime,
   lastWateredTimestamp,
+  compact = false,
 }) => {
   // Rain water animation state
   const [isRaining, setIsRaining] = useState<boolean>(false);
@@ -58,64 +61,10 @@ export const GrowingPlant: React.FC<GrowingPlantProps> = ({
     return () => clearTimeout(timer);
   };
 
-  return (
-    <div className="bg-white rounded-3xl p-5 border border-[#6FA79A]/15 shadow-sm space-y-4">
-      {/* Top Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-[#E8F2F0] flex items-center justify-center text-[#6FA79A]">
-            <Heart className="w-4 h-4 fill-[#6FA79A]" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-[#2C3E38] tracking-tight">
-              {childName}'s Care Garden
-            </h3>
-            <p className="text-xs text-[#5C736C]">
-              Goal: {weeklyGoal} of 7 days · Daily consistent care
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Automatic Rain Indicator (Triggers automatically after logging) */}
-          {isRaining ? (
-            <div className="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-[#E8F2F0] text-[#3B665E] border border-[#6FA79A]/40 shadow-xs animate-pulse">
-              <CloudRain className="w-3.5 h-3.5 animate-bounce text-[#6FA79A]" />
-              <span>Rain Shower Active 🌧️</span>
-            </div>
-          ) : (
-            <div className="px-2.5 py-1 rounded-full text-xs font-semibold text-[#5C736C] bg-[#FAF6EF] border border-[#EBE4D8] flex items-center gap-1.5">
-              <Droplets className="w-3.5 h-3.5 text-[#6FA79A]" />
-              <span>Rains on log</span>
-            </div>
-          )}
-
-          <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#FAF6EF] border border-[#EBE4D8] rounded-full text-xs font-bold text-[#578C80]">
-            <Sparkles className="w-3.5 h-3.5 text-[#E8B04B]" />
-            <span>{streakDays} Day Streak</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Rain Water Shower Alert Message if Active */}
-      {rainMessage && (
-        <div className="p-3 bg-gradient-to-r from-[#E8F2F0] via-[#E2F0EC] to-[#E8F2F0] rounded-2xl border border-[#6FA79A]/30 text-xs font-bold text-[#3B665E] flex items-center justify-between animate-fade-in shadow-2xs">
-          <div className="flex items-center gap-2">
-            <Droplets className="w-4 h-4 text-[#6FA79A] animate-bounce shrink-0" />
-            <span>{rainMessage}</span>
-          </div>
-          <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-white/70 text-[#426C63]">
-            Nourishing
-          </span>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-        {/* Plant Visual with Rain Water Shower SVG */}
-        <div className="sm:col-span-5 flex flex-col items-center justify-center bg-[#FAF6EF] rounded-2xl p-4 border border-[#EBE4D8]/60 relative overflow-hidden min-h-[170px]">
+  const plantSvg = (
           <svg
             viewBox="0 0 160 155"
-            className={`w-40 h-36 select-none transition-transform duration-500 ${
+            className={`${compact ? 'w-24 h-24' : 'w-40 h-36'} select-none transition-transform duration-500 ${
               isRaining ? 'animate-plant-grow' : 'hover:scale-105'
             }`}
           >
@@ -292,6 +241,81 @@ export const GrowingPlant: React.FC<GrowingPlantProps> = ({
               </g>
             )}
           </svg>
+  );
+
+  if (compact) {
+    return (
+      <div className="flex flex-col items-center justify-center text-center shrink-0" title={`${streakDays}-day streak · ${checkInsThisWeek}/${weeklyGoal} check-ins this week`}>
+        <div className={`rounded-2xl bg-[#FAF6EF] border border-[#EBE4D8]/60 px-2 pt-1 transition-shadow ${isRaining ? 'ring-2 ring-[#88C5B8]' : ''}`}>
+          {plantSvg}
+        </div>
+        <span className="mt-1 text-[11px] font-bold text-[#426C63]">
+          {stageName}
+          {isRaining && <span className="text-[#6FA79A] animate-pulse"> 💧</span>}
+        </span>
+        <span className="text-[10px] font-semibold text-[#5C736C]">
+          🔥 {streakDays}-day streak · {checkInsThisWeek}/{weeklyGoal} this week
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-3xl p-5 border border-[#6FA79A]/15 shadow-sm space-y-4">
+      {/* Top Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-[#E8F2F0] flex items-center justify-center text-[#6FA79A]">
+            <Heart className="w-4 h-4 fill-[#6FA79A]" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-[#2C3E38] tracking-tight">
+              {childName}'s Care Garden
+            </h3>
+            <p className="text-xs text-[#5C736C]">
+              Goal: {weeklyGoal} of 7 days · Daily consistent care
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Automatic Rain Indicator (Triggers automatically after logging) */}
+          {isRaining ? (
+            <div className="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-[#E8F2F0] text-[#3B665E] border border-[#6FA79A]/40 shadow-xs animate-pulse">
+              <CloudRain className="w-3.5 h-3.5 animate-bounce text-[#6FA79A]" />
+              <span>Rain Shower Active 🌧️</span>
+            </div>
+          ) : (
+            <div className="px-2.5 py-1 rounded-full text-xs font-semibold text-[#5C736C] bg-[#FAF6EF] border border-[#EBE4D8] flex items-center gap-1.5">
+              <Droplets className="w-3.5 h-3.5 text-[#6FA79A]" />
+              <span>Rains on log</span>
+            </div>
+          )}
+
+          <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#FAF6EF] border border-[#EBE4D8] rounded-full text-xs font-bold text-[#578C80]">
+            <Sparkles className="w-3.5 h-3.5 text-[#E8B04B]" />
+            <span>{streakDays} Day Streak</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Rain Water Shower Alert Message if Active */}
+      {rainMessage && (
+        <div className="p-3 bg-gradient-to-r from-[#E8F2F0] via-[#E2F0EC] to-[#E8F2F0] rounded-2xl border border-[#6FA79A]/30 text-xs font-bold text-[#3B665E] flex items-center justify-between animate-fade-in shadow-2xs">
+          <div className="flex items-center gap-2">
+            <Droplets className="w-4 h-4 text-[#6FA79A] animate-bounce shrink-0" />
+            <span>{rainMessage}</span>
+          </div>
+          <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-white/70 text-[#426C63]">
+            Nourishing
+          </span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+        {/* Plant Visual with Rain Water Shower SVG */}
+        <div className="sm:col-span-5 flex flex-col items-center justify-center bg-[#FAF6EF] rounded-2xl p-4 border border-[#EBE4D8]/60 relative overflow-hidden min-h-[170px]">
+          {plantSvg}
 
           <div className="text-center mt-1 flex items-center gap-1.5">
             <span className="text-xs font-bold text-[#426C63]">{stageName}</span>

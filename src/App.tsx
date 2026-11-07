@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Home,
   Camera,
-  Images,
   FlaskConical,
   FileSpreadsheet,
   Bell,
@@ -43,16 +42,15 @@ import { ProgressRings } from './components/ProgressRings';
 import { TrendChart } from './components/TrendChart';
 import { GrowingPlant } from './components/GrowingPlant';
 import { CalmPlanCard } from './components/CalmPlanCard';
-import { TrustedTipsCard } from './components/TrustedTipsCard';
 import { CheckInFlow } from './components/CheckInFlow';
-import { PhotoTimeline } from './components/PhotoTimeline';
+import { RecentPhotosStrip } from './components/RecentPhotosStrip';
 import { ProductTrialsView } from './components/ProductTrialsView';
 import { DoctorReportView } from './components/DoctorReportView';
 import { RedFlagAlert } from './components/RedFlagAlert';
 import { NotificationDrawer } from './components/NotificationDrawer';
 import { AddChildModal } from './components/AddChildModal';
 
-type NavTab = 'home' | 'timeline' | 'products' | 'report';
+type NavTab = 'home' | 'products' | 'report';
 
 export default function App() {
   // Navigation
@@ -323,7 +321,6 @@ export default function App() {
         <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm p-1.5 rounded-2xl border border-[#6FA79A]/15 shadow-xs">
           {[
             { id: 'home', label: 'Dashboard & Forecast', icon: Home },
-            { id: 'timeline', label: 'Photo Timeline', icon: Images },
             { id: 'products', label: 'Product Trials', icon: FlaskConical },
             { id: 'report', label: 'Doctor Report', icon: FileSpreadsheet },
           ].map((tab) => {
@@ -394,6 +391,17 @@ export default function App() {
                 onRefreshWeather={() => {}}
                 isLoadingWeather={isLoadingWeather}
                 onSensorCheckInPrompt={() => setIsCheckInOpen(true)}
+                plantSlot={
+                  <GrowingPlant
+                    compact
+                    streakDays={9}
+                    checkInsThisWeek={last7DaysCheckIns}
+                    weeklyGoal={5}
+                    childName={activeChild.name}
+                    reminderTime={activeChild.reminderTime}
+                    lastWateredTimestamp={lastWateredTimestamp}
+                  />
+                }
               />
             ) : (
               <div className="h-44 bg-white rounded-3xl animate-pulse border border-[#6FA79A]/15" />
@@ -416,15 +424,8 @@ export default function App() {
               photos={{ current: photosCount, goal: 5 }}
             />
 
-            {/* 3. Growing Plant Virtual Garden & Streak */}
-            <GrowingPlant
-              streakDays={9}
-              checkInsThisWeek={last7DaysCheckIns}
-              weeklyGoal={5}
-              childName={activeChild.name}
-              reminderTime={activeChild.reminderTime}
-              lastWateredTimestamp={lastWateredTimestamp}
-            />
+            {/* 3. Recent Photo Log (expands to the full timeline) */}
+            <RecentPhotosStrip checkIns={childCheckIns} childName={activeChild.name} />
 
             {/* 4. 14-Day Weekly Severity Trend Line Chart */}
             <TrendChart checkIns={childCheckIns} childName={activeChild.name} />
@@ -438,15 +439,6 @@ export default function App() {
               onUpdatePlan={handleUpdateCalmPlan}
             />
 
-            {/* 6. Contextual Trusted Tips */}
-            <TrustedTipsCard />
-          </div>
-        )}
-
-        {/* TAB 2: PHOTO TIMELINE */}
-        {currentTab === 'timeline' && (
-          <div className="animate-fade-in">
-            <PhotoTimeline checkIns={childCheckIns} childName={activeChild.name} />
           </div>
         )}
 
@@ -475,7 +467,7 @@ export default function App() {
 
       {/* MOBILE-FIRST FIXED BOTTOM NAVIGATION BAR */}
       <nav className="no-print fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#6FA79A]/20 md:hidden">
-        <div className="grid grid-cols-5 items-center h-16 max-w-md mx-auto px-2">
+        <div className="grid grid-cols-4 items-center h-16 max-w-md mx-auto px-2">
           {/* Tab 1: Home */}
           <button
             onClick={() => setCurrentTab('home')}
@@ -487,15 +479,15 @@ export default function App() {
             <span className="text-[10px] font-bold tracking-tight mt-1">Home</span>
           </button>
 
-          {/* Tab 2: Timeline */}
+          {/* Tab 3: Products */}
           <button
-            onClick={() => setCurrentTab('timeline')}
+            onClick={() => setCurrentTab('products')}
             className={`flex flex-col items-center justify-center h-full transition-colors ${
-              currentTab === 'timeline' ? 'text-[#578C80]' : 'text-slate-400 hover:text-slate-600'
+              currentTab === 'products' ? 'text-[#578C80]' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
-            <Images className="w-5 h-5" />
-            <span className="text-[10px] font-bold tracking-tight mt-1">Timeline</span>
+            <FlaskConical className="w-5 h-5" />
+            <span className="text-[10px] font-bold tracking-tight mt-1">Trials</span>
           </button>
 
           {/* Center Primary Action: Snap Check-in */}
@@ -508,17 +500,6 @@ export default function App() {
               <Camera className="w-6 h-6" />
             </button>
           </div>
-
-          {/* Tab 3: Products */}
-          <button
-            onClick={() => setCurrentTab('products')}
-            className={`flex flex-col items-center justify-center h-full transition-colors ${
-              currentTab === 'products' ? 'text-[#578C80]' : 'text-slate-400 hover:text-slate-600'
-            }`}
-          >
-            <FlaskConical className="w-5 h-5" />
-            <span className="text-[10px] font-bold tracking-tight mt-1">Trials</span>
-          </button>
 
           {/* Tab 4: Doctor Report */}
           <button

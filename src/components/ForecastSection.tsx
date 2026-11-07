@@ -28,6 +28,8 @@ interface ForecastSectionProps {
   isLoadingWeather?: boolean;
   /** Opens the check-in flow when the indoor sensor's reminder alarm fires or its button is pressed. */
   onSensorCheckInPrompt?: () => void;
+  /** Shown on the right of the skin status card (the growing plant). */
+  plantSlot?: React.ReactNode;
 }
 
 const TOO_HUMID_THRESHOLD = 60;
@@ -43,6 +45,7 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
   onRefreshWeather,
   isLoadingWeather,
   onSensorCheckInPrompt,
+  plantSlot,
 }) => {
   // Live ESP32 indoor sensor over USB (Web Serial). Falls back to simulated data when not connected.
   const acknowledgeRef = React.useRef<(() => Promise<void>) | null>(null);
@@ -131,8 +134,19 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
           }`}
         />
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
+        {/* Score (left) · Current skin status (middle) · Plant (right) */}
+        <div className="relative flex items-center gap-4 sm:gap-6">
+          {/* Score */}
+          <div className="flex flex-col items-center shrink-0">
+            <span className={`text-6xl sm:text-7xl font-black tracking-tight tabular-nums leading-none ${scoreTextClass}`}>
+              {latestSkinScore}
+            </span>
+            <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">/ 100</span>
+            <span className="text-[10px] text-[#5C736C] font-semibold">Skin Score</span>
+          </div>
+
+          {/* Current skin status */}
+          <div className="flex-1 min-w-0 space-y-2">
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#5C736C]">
                 Current Skin Status
@@ -141,52 +155,30 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
               <span className="text-xs font-semibold text-[#426C63]">{childName}</span>
             </div>
 
-            {/* Status Badge */}
-            <div className="mt-1.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border shadow-2xs tracking-wide">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border shadow-2xs tracking-wide">
               <span
                 className={`w-2 h-2 rounded-full ${
-                  latestSkinScore >= 75
-                    ? 'bg-[#578C80]'
-                    : latestSkinScore >= 50
-                    ? 'bg-[#E8B04B]'
-                    : 'bg-[#D9644F]'
+                  latestSkinScore >= 75 ? 'bg-[#578C80]' : latestSkinScore >= 50 ? 'bg-[#E8B04B]' : 'bg-[#D9644F]'
                 }`}
               />
               <span className={statusBadgeLabel === 'Active Flare Alert' ? 'text-[#D9644F]' : latestSkinScore >= 75 ? 'text-[#426C63]' : 'text-[#B88A3B]'}>
                 {statusBadgeLabel}
               </span>
             </div>
-          </div>
 
-          {/* Comparison kicker */}
-          <div className="flex items-center gap-1.5 sm:text-right">
-            <div className={`text-xs font-bold flex items-center gap-1 ${comparisonColor} bg-[#FAF6EF] px-3 py-1.5 rounded-xl border border-[#EBE4D8]`}>
+            <div className={`text-xs font-bold flex items-center gap-1 ${comparisonColor}`}>
               <ComparisonIcon className="w-4 h-4 shrink-0" />
               <span>{comparisonText}</span>
             </div>
-          </div>
-        </div>
 
-        {/* BOLD, PROMINENT SCORE DISPLAY */}
-        <div className="mt-5 flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
-          <div className="flex items-baseline gap-3">
-            <span className={`text-6xl sm:text-7xl font-black tracking-tight tabular-nums ${scoreTextClass}`}>
-              {latestSkinScore}
-            </span>
-            <div className="flex flex-col">
-              <span className="text-sm font-black text-slate-400 uppercase tracking-widest">
-                / 100
-              </span>
-              <span className="text-xs text-[#5C736C] font-semibold">
-                Daily Barrier Score
-              </span>
-            </div>
+            <p className="text-xs text-[#4A645D] leading-relaxed hidden sm:block">{statusSummary}</p>
           </div>
 
-          <p className="text-xs sm:text-sm text-[#4A645D] max-w-sm leading-relaxed sm:text-right">
-            {statusSummary}
-          </p>
+          {/* Plant */}
+          {plantSlot && <div className="shrink-0">{plantSlot}</div>}
         </div>
+
+        <p className="text-xs text-[#4A645D] leading-relaxed mt-3 sm:hidden">{statusSummary}</p>
 
         {/* Interactive Visual Spectrum Meter (0 to 100) */}
         <div className="mt-5 space-y-2">
