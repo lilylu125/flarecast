@@ -80,7 +80,7 @@ export function generateMockCheckIns(childId: string = 'child-mia'): CheckIn[] {
       severity = 'flare';
       tags = ['Bad night', 'Daycare/School', 'Bath'];
       productUsed = {
-        name: 'Hydrocortisone 1% (Calm Plan)',
+        name: 'Hydrocortisone 1% (Care Plan)',
         amount: '1 FTU',
       };
       description = 'Prominent redness, warmth, and scratch marks along lower cheek crease. Restless sleep noted.';

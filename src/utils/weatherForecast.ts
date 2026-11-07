@@ -76,7 +76,7 @@ export function computeFlareRisk({
   let reason = '';
   if (riskLevel === 'High') {
     reason = reasons.length > 0
-      ? `${reasons.join(' and ')}. Keep the Calm Plan moisturizer routine close.`
+      ? `${reasons.join(' and ')}. Keep the Care Plan moisturizer routine close.`
       : `Multiple environmental triggers aligned today. Extra barrier protection advised.`;
   } else if (riskLevel === 'Medium') {
     reason = reasons.length > 0
@@ -194,7 +194,7 @@ export async function fetchWeatherForecast(
         precipitationMm: 0,
         conditionIcon: 'wind',
         riskLevel: 'High',
-        riskReason: `Humidity drops to 26% and cold air is arriving tonight. Stick to the Calm Plan moisturizer routine.`,
+        riskReason: `Humidity drops to 26% and cold air is arriving tonight. Stick to the Care Plan moisturizer routine.`,
       },
       {
         date: new Date(Date.now() + 86400000).toISOString().split('T')[0],

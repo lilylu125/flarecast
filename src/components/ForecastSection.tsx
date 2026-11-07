@@ -14,6 +14,7 @@ import {
   Minus,
   ShieldCheck,
   CheckCircle2,
+  ChevronDown,
 } from 'lucide-react';
 import { WeatherForecastResult } from '../utils/weatherForecast';
 import { FlareRisk, IndoorSensorData } from '../types';
@@ -48,6 +49,7 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
   plantSlot,
 }) => {
   // Live ESP32 indoor sensor over USB (Web Serial). Falls back to simulated data when not connected.
+  const [showOutlook, setShowOutlook] = React.useState(false);
   const acknowledgeRef = React.useRef<(() => Promise<void>) | null>(null);
   const sensor = useIndoorSensor({
     onCheckInPrompt: () => {
@@ -103,7 +105,7 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
     statusBadgeLabel = 'Active Flare Alert';
     statusColorClass = 'text-[#D9644F] bg-[#FDEEEB] border-[#D9644F]/30';
     scoreTextClass = 'text-[#D9644F]';
-    statusSummary = `Skin barrier is compromised with heightened redness and itching. Calm Plan recommended.`;
+    statusSummary = `Skin barrier is compromised with heightened redness and itching. Care Plan recommended.`;
   } else if (latestSkinScore < 75) {
     statusBadgeLabel = 'Moderate Dryness / Sensitivity';
     statusColorClass = 'text-[#B88A3B] bg-[#FEF6E8] border-[#E8B04B]/35';
@@ -204,129 +206,131 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
         </div>
       </div>
 
-      {/* 2. TODAY'S FORECAST & RISK PREDICTION CARD */}
-      <div
-        className={`rounded-3xl p-5 sm:p-6 shadow-sm border transition-all relative overflow-hidden ${
-          currentRisk === 'High'
-            ? 'bg-gradient-to-br from-white via-[#FFF5F3] to-[#FDF0EC] border-[#D9644F]/30'
-            : currentRisk === 'Medium'
-            ? 'bg-gradient-to-br from-white via-[#FFFDF8] to-[#FCF8EE] border-[#E8B04B]/35'
-            : 'bg-gradient-to-br from-white via-[#F6FAF9] to-[#EFF7F5] border-[#6FA79A]/20'
-        }`}
-      >
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-1.5 text-xs text-[#5C736C]">
-              <MapPin className="w-3.5 h-3.5 text-[#6FA79A]" />
-              <span className="font-semibold">{weather.locationName}</span>
+      {/* 2. BENTO: weather forecast (left) + indoor sensor (right) */}
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+        {/* Weather forecast */}
+        <div
+          className={`sm:col-span-3 rounded-3xl p-5 shadow-sm border transition-all relative overflow-hidden ${
+            currentRisk === 'High'
+              ? 'bg-gradient-to-br from-white via-[#FFF5F3] to-[#FDF0EC] border-[#D9644F]/30'
+              : currentRisk === 'Medium'
+              ? 'bg-gradient-to-br from-white via-[#FFFDF8] to-[#FCF8EE] border-[#E8B04B]/35'
+              : 'bg-gradient-to-br from-white via-[#F6FAF9] to-[#EFF7F5] border-[#6FA79A]/20'
+          }`}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="space-y-1 min-w-0">
+              <div className="flex items-center gap-1.5 text-xs text-[#5C736C]">
+                <MapPin className="w-3.5 h-3.5 text-[#6FA79A] shrink-0" />
+                <span className="font-semibold truncate">{weather.locationName}</span>
+              </div>
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#5C736C]">Flare risk</span>
+                <span
+                  className={`text-xl sm:text-2xl font-black ${
+                    currentRisk === 'High' ? 'text-[#D9644F]' : currentRisk === 'Medium' ? 'text-[#B88A3B]' : 'text-[#426C63]'
+                  }`}
+                >
+                  {currentRisk}
+                </span>
+              </div>
             </div>
-
-            <div className="flex items-baseline gap-2 pt-1">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#5C736C]">
-                Today's Flare Risk
-              </span>
-              <span
-                className={`text-xl sm:text-2xl font-black ${
-                  currentRisk === 'High'
-                    ? 'text-[#D9644F]'
-                    : currentRisk === 'Medium'
-                    ? 'text-[#B88A3B]'
-                    : 'text-[#426C63]'
-                }`}
-              >
-                {currentRisk} Risk
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-white shadow-sm border border-black/5">
+            <div className="p-2.5 rounded-2xl bg-white shadow-sm border border-black/5 shrink-0">
               {todayForecast && getWeatherIcon(todayForecast.conditionIcon, currentRisk)}
             </div>
           </div>
-        </div>
 
-        {/* One-line Plain-language Reason */}
-        <p className="text-xs sm:text-sm text-[#2C3E38] font-medium mt-3 leading-relaxed bg-white/70 backdrop-blur-sm p-3 rounded-2xl border border-black/5">
-          "{riskReason}"
-        </p>
+          <p className="text-xs sm:text-sm text-[#2C3E38] font-medium mt-3 leading-relaxed bg-white/70 p-3 rounded-2xl border border-black/5">
+            {riskReason}
+          </p>
 
-        {/* 3-Day Micro Forecast Strip */}
-        <div className="mt-4 pt-4 border-t border-black/5">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-[#5C736C] uppercase tracking-wider">
-              3-Day Weather & Flare Outlook
-            </span>
-          </div>
+          {/* 3-day outlook: hidden by default */}
+          <button
+            type="button"
+            onClick={() => setShowOutlook((v) => !v)}
+            aria-expanded={showOutlook}
+            className="mt-3 w-full flex items-center justify-between text-xs font-bold text-[#426C63] px-1 py-1"
+          >
+            <span>3-day outlook</span>
+            <ChevronDown className={`w-4 h-4 transition-transform ${showOutlook ? 'rotate-180' : ''}`} />
+          </button>
 
-          <div className="grid grid-cols-3 gap-2">
-            {weather.days.map((day, idx) => {
-              const isToday = idx === 0;
-              return (
+          {showOutlook && (
+            <div className="grid grid-cols-3 gap-2 mt-1">
+              {weather.days.map((day, idx) => (
                 <div
                   key={day.date}
-                  className={`p-2.5 rounded-2xl text-center text-xs transition-colors ${
-                    isToday
-                      ? 'bg-white shadow-sm border border-[#6FA79A]/30'
-                      : 'bg-white/60 border border-black/5'
+                  className={`p-2.5 rounded-2xl text-center text-xs ${
+                    idx === 0 ? 'bg-white shadow-sm border border-[#6FA79A]/30' : 'bg-white/60 border border-black/5'
                   }`}
                 >
-                  <span className="text-[10px] font-bold text-[#5C736C] block">
-                    {day.dayName}
-                  </span>
-                  <div className="my-1 flex justify-center">
-                    {getWeatherIcon(day.conditionIcon, day.riskLevel)}
-                  </div>
+                  <span className="text-[10px] font-bold text-[#5C736C] block">{day.dayName}</span>
+                  <div className="my-1 flex justify-center">{getWeatherIcon(day.conditionIcon, day.riskLevel)}</div>
                   <div className="font-bold text-[#2C3E38]">
-                    {day.tempMaxC}°C / {day.tempMinC}°C
+                    {day.tempMaxC}° / {day.tempMinC}°
                   </div>
-                  <span className="text-[10px] text-slate-500 block">
-                    {day.humidityPercent}% RH
-                  </span>
+                  <span className="text-[10px] text-slate-500 block">{day.humidityPercent}% RH</span>
                   <span
                     className={`text-[10px] font-bold block mt-0.5 ${
-                      day.riskLevel === 'High'
-                        ? 'text-[#D9644F]'
-                        : day.riskLevel === 'Medium'
-                        ? 'text-[#B88A3B]'
-                        : 'text-[#426C63]'
+                      day.riskLevel === 'High' ? 'text-[#D9644F]' : day.riskLevel === 'Medium' ? 'text-[#B88A3B]' : 'text-[#426C63]'
                     }`}
                   >
                     {day.riskLevel}
                   </span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* 3. INDOOR SENSOR CARD */}
-      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-[#6FA79A]/15 shadow-sm">
-        <div className="flex items-center justify-between mb-2 gap-2">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-xl bg-[#FAF6EF] flex items-center justify-center text-[#578C80]">
-              <Droplets className="w-4 h-4 text-[#6FA79A]" />
+              ))}
             </div>
-            <div>
-              <h4 className="text-xs font-bold text-[#2C3E38]">
-                Indoor Sensor: {indoor.roomName}
-              </h4>
-              <p className="text-[11px] text-[#5C736C] flex items-center gap-1">
-                {isLiveSensor ? (
-                  <>
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#578C80] animate-pulse" />
-                    Live from your Flarecast sensor
-                  </>
-                ) : sensor.status === 'connected' ? (
-                  'Connected · waiting for first reading…'
-                ) : null}
-              </p>
+          )}
+        </div>
+
+        {/* Indoor sensor */}
+        <div className="sm:col-span-2 bg-white rounded-3xl p-5 border border-[#6FA79A]/15 shadow-sm flex flex-col">
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="text-xs font-bold text-[#2C3E38] flex items-center gap-1.5 min-w-0">
+              <Droplets className="w-4 h-4 text-[#6FA79A] shrink-0" />
+              <span className="truncate">{indoor.roomName}</span>
+            </h4>
+            {isLiveSensor && (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-[#426C63] shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#578C80] animate-pulse" />
+                Live
+              </span>
+            )}
+          </div>
+
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="rounded-2xl bg-[#FAF6EF] border border-[#EBE4D8] p-3 text-center">
+              <Thermometer className="w-4 h-4 text-[#F4A98A] mx-auto" />
+              <div className="text-xl font-black text-[#2C3E38] mt-1 tabular-nums">{indoor.tempC}°</div>
+              <div className="text-[10px] font-semibold text-[#5C736C]">Temp</div>
+            </div>
+            <div
+              className={`rounded-2xl border p-3 text-center ${
+                indoor.status === 'Ideal'
+                  ? 'bg-[#E8F2F0] border-[#6FA79A]/30'
+                  : indoor.status === 'Too Humid'
+                  ? 'bg-[#FEF6E8] border-[#E8B04B]/35'
+                  : 'bg-[#FDEEEB] border-[#D9644F]/30'
+              }`}
+            >
+              <Droplets
+                className={`w-4 h-4 mx-auto ${
+                  indoor.status === 'Ideal' ? 'text-[#426C63]' : indoor.status === 'Too Humid' ? 'text-[#B88A3B]' : 'text-[#D9644F]'
+                }`}
+              />
+              <div
+                className={`text-xl font-black mt-1 tabular-nums ${
+                  indoor.status === 'Ideal' ? 'text-[#426C63]' : indoor.status === 'Too Humid' ? 'text-[#B88A3B]' : 'text-[#D9644F]'
+                }`}
+              >
+                {indoor.humidityPercent}%
+              </div>
+              <div className="text-[10px] font-semibold text-[#5C736C]">Humidity</div>
             </div>
           </div>
 
           <span
-            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 shrink-0 ${
+            className={`mt-2 self-start px-2.5 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 ${
               indoor.status === 'Ideal'
                 ? 'bg-[#E8F2F0] text-[#426C63]'
                 : indoor.status === 'Too Humid'
@@ -335,66 +339,31 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
             }`}
           >
             {indoor.status === 'Ideal' ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-            {indoor.status}
+            {indoor.status === 'Dry Air Alert' ? 'Dry air · aim for 40–50%' : indoor.status === 'Too Humid' ? 'Humid · aim for 40–50%' : 'Ideal'}
           </span>
-        </div>
 
-        <div className="flex items-center justify-between bg-[#FAF6EF] p-3 rounded-2xl border border-[#EBE4D8] text-xs">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1 font-bold text-[#2C3E38]">
-              <Thermometer className="w-4 h-4 text-[#F4A98A]" />
-              <span>
-                {indoor.tempC}°C
-              </span>
-            </div>
-            <div
-              className={`flex items-center gap-1 font-black ${
-                indoor.status === 'Ideal' ? 'text-[#426C63]' : indoor.status === 'Too Humid' ? 'text-[#B88A3B]' : 'text-[#D9644F]'
-              }`}
-            >
-              <Droplets className="w-4 h-4" />
-              <span>
-                {indoor.humidityPercent}% RH
-                {indoor.status === 'Dry Air Alert' ? ' (Very Dry)' : indoor.status === 'Too Humid' ? ' (Humid)' : ''}
-              </span>
-            </div>
-          </div>
-
-          <span className="text-[11px] text-[#4A645D] font-medium hidden sm:inline">
-            Ideal nursery humidity: 40%–50%
-          </span>
-        </div>
-
-        {/* Connect / disconnect the ESP32 over USB */}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-          {sensor.supported ? (
-            sensor.status === 'connected' ? (
-              <>
-                <span className="text-[11px] text-[#426C63] font-semibold">
-                  {sensor.alarmOn ? 'Photo reminder ringing — open today\'s check-in' : 'Sensor connected over USB'}
-                </span>
+          <div className="mt-auto pt-3">
+            {sensor.supported ? (
+              sensor.status === 'connected' ? (
                 <button
                   onClick={() => void sensor.disconnect()}
-                  className="text-[11px] font-bold px-3 py-1.5 rounded-xl border border-[#EBE4D8] text-[#5C736C] hover:bg-[#FAF6EF]"
+                  className="w-full text-[11px] font-bold px-3 py-2 rounded-xl border border-[#EBE4D8] text-[#5C736C] hover:bg-[#FAF6EF]"
                 >
-                  Disconnect
+                  {sensor.alarmOn ? "Reminder ringing · Disconnect" : 'Disconnect sensor'}
                 </button>
-              </>
-            ) : (
-              <>
-                <span />
+              ) : (
                 <button
                   onClick={() => void sensor.connect()}
                   disabled={sensor.status === 'connecting'}
-                  className="text-[11px] font-bold px-3 py-1.5 rounded-xl bg-[#6FA79A] text-white hover:bg-[#578C80] disabled:opacity-60"
+                  className="w-full text-[11px] font-bold px-3 py-2 rounded-xl bg-[#6FA79A] text-white hover:bg-[#578C80] disabled:opacity-60"
                 >
-                  {sensor.status === 'connecting' ? 'Connecting…' : 'Connect indoor sensor'}
+                  {sensor.status === 'connecting' ? 'Connecting…' : 'Connect sensor'}
                 </button>
-              </>
-            )
-          ) : (
-            <span className="text-[11px] text-[#5C736C]">Live sensor works in Chrome on a laptop</span>
-          )}
+              )
+            ) : (
+              <span className="text-[11px] text-[#5C736C]">Live sensor works in Chrome on a laptop</span>
+            )}
+          </div>
         </div>
       </div>
     </div>

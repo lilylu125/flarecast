@@ -397,7 +397,22 @@ export default function App() {
               <div className="h-44 bg-white rounded-3xl animate-pulse border border-[#6FA79A]/15" />
             )}
 
-            {/* 1b. Accessible Spoken AI Audio Summary Briefing */}
+            {/* 3. Recent Photo Log (expands to the full timeline) */}
+            <RecentPhotosStrip checkIns={childCheckIns} childName={activeChild.name} onDeleteCheckIn={handleDeleteCheckIn} />
+
+            {/* 4. 14-Day Weekly Severity Trend Line Chart */}
+            <TrendChart checkIns={childCheckIns} childName={activeChild.name} />
+
+            {/* 5. Care Plan routine card */}
+            <CalmPlanCard
+              child={activeChild}
+              forecastRisk={weatherData?.days[0]?.riskLevel || 'Low'}
+              isCalmPlanDoneToday={isCalmPlanDoneToday}
+              onToggleDoneToday={handleToggleCalmPlanToday}
+              onUpdatePlan={handleUpdateCalmPlan}
+            />
+
+            {/* 6. Accessible spoken audio briefing (bottom) */}
             {weatherData && (
               <AudioSummaryCard
                 child={activeChild}
@@ -407,20 +422,6 @@ export default function App() {
               />
             )}
 
-            {/* 3. Recent Photo Log (expands to the full timeline) */}
-            <RecentPhotosStrip checkIns={childCheckIns} childName={activeChild.name} onDeleteCheckIn={handleDeleteCheckIn} />
-
-            {/* 4. 14-Day Weekly Severity Trend Line Chart */}
-            <TrendChart checkIns={childCheckIns} childName={activeChild.name} />
-
-            {/* 5. Calm Plan Prevention Routine Card */}
-            <CalmPlanCard
-              child={activeChild}
-              forecastRisk={weatherData?.days[0]?.riskLevel || 'Low'}
-              isCalmPlanDoneToday={isCalmPlanDoneToday}
-              onToggleDoneToday={handleToggleCalmPlanToday}
-              onUpdatePlan={handleUpdateCalmPlan}
-            />
 
           </div>
         )}

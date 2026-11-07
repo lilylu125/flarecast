@@ -231,7 +231,7 @@ Child Profile Context:
 - Current Skin Score: ${skinScore}/100
 - Today's Flare Risk: ${flareRisk}
 - Weather / Environment: ${weatherSummary}
-- Calm Plan Routine: ${calmPlan.morningMoisturizer || 'Gentle emollient'} in morning, ${calmPlan.eveningMoisturizer || 'Ceramide balm'} after lukewarm bath. Doctor: ${calmPlan.doctorName || 'Pediatrician'}.
+- Care Plan Routine: ${calmPlan.morningMoisturizer || 'Gentle emollient'} in morning, ${calmPlan.eveningMoisturizer || 'Ceramide balm'} after lukewarm bath. Doctor: ${calmPlan.doctorName || 'Pediatrician'}.
 ${activeTrial ? `- Active Product Trial: ${activeTrial.name} (Day ${activeTrial.daysLogged} of ${activeTrial.durationDays})` : ''}
 
 Guidelines:
@@ -307,7 +307,7 @@ Status:
 - Skin score: ${skinScore} out of 100
 - Flare risk today: ${flareRisk}
 - Weather: ${tempC}°C, ${humidity}% humidity
-- Calm Plan: ${calmRoutine}
+- Care Plan: ${calmRoutine}
 
 Rules:
 - Written purely to be read aloud (conversational, natural, friendly).

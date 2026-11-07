@@ -481,7 +481,7 @@ export const CheckInFlow: React.FC<CheckInFlowProps> = ({
                     >
                       <option value="None">None</option>
                       <option value="Ceramide Barrier Balm">Ceramide Barrier Balm</option>
-                      <option value="Hydrocortisone 1% (Calm Plan)">Hydrocortisone 1%</option>
+                      <option value="Hydrocortisone 1% (Care Plan)">Hydrocortisone 1%</option>
                       <option value="Gentle Calming Emollient">Gentle Calming Emollient</option>
                       <option value="Oat Soothing Lotion">Oat Soothing Lotion</option>
                     </select>
@@ -505,7 +505,7 @@ export const CheckInFlow: React.FC<CheckInFlowProps> = ({
                 </div>
 
                 <label className="px-3 py-2.5 rounded-xl bg-[#F2F7F6] flex items-center justify-between cursor-pointer">
-                  <span className="text-xs font-bold text-[#2C3E38]">Calm Plan done today</span>
+                  <span className="text-xs font-bold text-[#2C3E38]">Care Plan done today</span>
                   <input
                     type="checkbox"
                     checked={calmPlanDone}
@@ -664,7 +664,7 @@ function getNextSteps(status: 'green' | 'yellow' | 'red', tags: string[]): { tex
     steps.push({ text: 'Contact your doctor today.', urgent: true });
     steps.push({ text: "Follow your doctor's flare plan until you hear back." });
   } else if (status === 'yellow') {
-    steps.push({ text: 'Do your Calm Plan routine tonight.' });
+    steps.push({ text: 'Do your Care Plan routine tonight.' });
     steps.push({ text: 'Moisturize within 3 minutes after bath.' });
     steps.push({ text: 'Not better in 2–3 days? Book a doctor visit.' });
   } else {

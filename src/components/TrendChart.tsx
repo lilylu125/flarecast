@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { CheckIn } from '../types';
 
 interface TrendChartProps {
@@ -10,6 +11,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ checkIns, childName }) =
   // Use last 14 days
   const recent14 = checkIns.slice(-14);
   const [selectedPoint, setSelectedPoint] = useState<CheckIn | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   if (recent14.length === 0) {
     return null;
@@ -48,20 +50,24 @@ export const TrendChart: React.FC<TrendChartProps> = ({ checkIns, childName }) =
 
   return (
     <div className="bg-white rounded-3xl p-5 border border-[#6FA79A]/15 shadow-sm">
-      <div className="flex items-center justify-between mb-2">
-        <div>
-          <h3 className="text-sm font-bold text-[#2C3E38] tracking-tight">
-            14-Day Skin Score Trend
-          </h3>
-        </div>
-        <div className="text-right">
-          <span className="text-xs text-[#5C736C]">14-Day Avg</span>
-          <div className="text-base font-black text-[#426C63]">{avgScore} / 100</div>
-        </div>
-      </div>
+      <button
+        type="button"
+        onClick={() => setIsOpen((v) => !v)}
+        aria-expanded={isOpen}
+        className="w-full flex items-center justify-between text-left"
+      >
+        <h3 className="text-sm font-bold text-[#2C3E38] tracking-tight">14-Day Skin Score Trend</h3>
+        <span className="flex items-center gap-2">
+          <span className="text-xs text-[#5C736C]">
+            Avg <span className="text-sm font-black text-[#426C63]">{avgScore}</span>
+          </span>
+          <ChevronDown className={`w-4 h-4 text-[#426C63] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </span>
+      </button>
 
-      {/* SVG Chart */}
-      <div className="relative w-full overflow-hidden">
+      {/* SVG Chart (hidden until opened) */}
+      {isOpen && (
+      <div className="relative w-full overflow-hidden mt-3">
         <svg
           viewBox={`0 0 ${width} ${height}`}
           className="w-full h-auto overflow-visible select-none"
@@ -192,6 +198,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ checkIns, childName }) =
           </div>
         ) : null}
       </div>
+      )}
     </div>
   );
 };

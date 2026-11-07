@@ -46,7 +46,7 @@ export const CalmPlanCard: React.FC<CalmPlanCardProps> = ({
             : 'bg-white border-[#6FA79A]/15'
         }`}
       >
-        <div className="flex items-start justify-between mb-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2.5">
             <div
               className={`w-9 h-9 rounded-2xl flex items-center justify-center ${
@@ -57,12 +57,12 @@ export const CalmPlanCard: React.FC<CalmPlanCardProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <h3 className="text-sm font-bold text-[#2C3E38]">
-                  {child.name}'s Calm Plan
+                <h3 className="text-sm font-bold text-[#2C3E38] whitespace-nowrap">
+                  {child.name}'s Care Plan
                 </h3>
                 {isRiskElevated && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FDF4F0] text-[#D9644F]">
-                    Elevated Risk Active
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FDF4F0] text-[#D9644F] whitespace-nowrap">
+                    High risk today
                   </span>
                 )}
               </div>
@@ -72,45 +72,46 @@ export const CalmPlanCard: React.FC<CalmPlanCardProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsEditing(true)}
-              className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
-              title="Edit doctor routine"
+              className="h-9 px-3 rounded-xl border border-[#6FA79A]/40 bg-white text-[#426C63] font-bold text-xs flex items-center gap-1.5 whitespace-nowrap hover:bg-[#F2F7F6] transition-colors"
+              title="Edit care plan"
             >
-              <Edit2 className="w-4 h-4" />
+              <Edit2 className="w-3.5 h-3.5" />
+              <span>Edit plan</span>
             </button>
 
             <button
               onClick={onToggleDoneToday}
-              className={`h-9 px-3.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all ${
+              className={`h-9 px-3.5 rounded-xl font-bold text-xs flex items-center gap-1.5 whitespace-nowrap transition-all ${
                 isCalmPlanDoneToday
                   ? 'bg-[#E8F2F0] text-[#426C63] border border-[#6FA79A]/30'
                   : 'bg-[#6FA79A] text-white shadow-sm hover:bg-[#578C80]'
               }`}
             >
               <Check className="w-3.5 h-3.5" />
-              <span>{isCalmPlanDoneToday ? 'Routine Done Today' : 'Mark Done Today'}</span>
+              <span>{isCalmPlanDoneToday ? 'Done today' : 'Mark done'}</span>
             </button>
           </div>
         </div>
 
         {/* Routine Steps Checklist */}
         <div className="space-y-2 text-xs">
-          <div className="p-3 rounded-2xl bg-[#FAF6EF] border border-[#EBE4D8] space-y-1">
+          <button type="button" onClick={() => setIsEditing(true)} title="Tap to edit" className="w-full text-left p-3 rounded-2xl bg-[#FAF6EF] border border-[#EBE4D8] space-y-1 hover:border-[#6FA79A]/50 hover:bg-[#F2F7F6] transition-colors">
             <span className="text-[10px] uppercase font-bold tracking-wider text-[#578C80] block">
               1. Soak & Seal Moisture Rule
             </span>
             <p className="text-[#2C3E38] font-medium leading-relaxed">
               {child.calmPlan.moisturizerRoutine}
             </p>
-          </div>
+          </button>
 
-          <div className="p-3 rounded-2xl bg-[#FAF6EF] border border-[#EBE4D8] space-y-1">
+          <button type="button" onClick={() => setIsEditing(true)} title="Tap to edit" className="w-full text-left p-3 rounded-2xl bg-[#FAF6EF] border border-[#EBE4D8] space-y-1 hover:border-[#6FA79A]/50 hover:bg-[#F2F7F6] transition-colors">
             <span className="text-[10px] uppercase font-bold tracking-wider text-[#B8684C] block">
               2. Active Flare Spot Routine
             </span>
             <p className="text-[#2C3E38] font-medium leading-relaxed">
               {child.calmPlan.prescribedRoutine}
             </p>
-          </div>
+          </button>
         </div>
 
         {isRiskElevated && (
@@ -133,7 +134,7 @@ export const CalmPlanCard: React.FC<CalmPlanCardProps> = ({
                   Doctor-Prescribed Protocol
                 </span>
                 <h3 className="text-base font-bold text-[#2C3E38]">
-                  Edit Calm Plan for {child.name}
+                  Edit Care Plan for {child.name}
                 </h3>
               </div>
               <button
@@ -194,7 +195,7 @@ export const CalmPlanCard: React.FC<CalmPlanCardProps> = ({
                   type="submit"
                   className="h-10 px-5 rounded-xl bg-[#6FA79A] text-white font-bold text-xs shadow-sm hover:bg-[#578C80]"
                 >
-                  Save Calm Plan
+                  Save Care Plan
                 </button>
               </div>
             </form>
