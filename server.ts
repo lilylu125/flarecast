@@ -170,7 +170,7 @@ Format response strictly in JSON.`;
     }
 
     // Graceful resilient fallback: generate realistic assessment based on area & reported itch/tags
-    const isFlare = itchScore >= 4 || tags.includes('Bad night') || tags.includes('Sweaty/hot');
+    const isFlare = itchScore >= 4 || tags.includes('Bad night') || tags.includes('Sports / sweaty');
     const isMild = itchScore <= 2 && !tags.includes('Bad night');
 
     const redness = isFlare ? 2 : isMild ? 1 : 2;
