@@ -206,7 +206,7 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
               ? 'bg-[#FBDCD4] border-[#D9644F]/50'
               : currentRisk === 'Medium'
               ? 'bg-[#FCEBC4] border-[#E8B04B]/60'
-              : 'bg-white border-[#6FA79A]/20'
+              : 'bg-gradient-to-br from-white via-[#F6FAF9] to-[#EFF7F5] border-[#6FA79A]/20'
           }`}
         >
           <div className="space-y-1 min-w-0">
