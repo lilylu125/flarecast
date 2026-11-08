@@ -4,7 +4,7 @@
 
 <h1 align="center">Flarecast</h1>
 
-<p align="center"><strong>See the pattern. Stop the flare.</strong></p>
+<p align="center"><strong>Forecast the Flare.</strong></p>
 
 <p align="center">
   🏆 <strong>2nd Place: Women in Engineering Hackathon 2026, University of Waterloo</strong><br/>
