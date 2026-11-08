@@ -108,7 +108,7 @@ Flarecast supports decisions; it does not diagnose. Every AI output is framed as
 
 Built in one day at the Women in Engineering Hackathon 2026, University of Waterloo.
 
-- **Lily Lu**: team lead and lead presenter
+- **Lily Lu**: team lead and presenter
 - **Elim Shen**
 - **Lily Bai**
-- **[@aileeng3835](https://github.com/aileeng3835)**
+- **Aileen Gao**
